@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Ella Rises</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script type="text/javascript" src="https://public.tableau.com/javascripts/api/tableau-2.min.js"></script>
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="/"><h1>Ella Rises</h1></a>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <% if (username) { %>
+                            <% if (level === 'M') { %>
+                                <li><a href="/users">Users</a></li>
+                            <% } %>
+                            <li><a href="/participants">Participants</a></li>
+                            <li><a href="/events">Events</a></li>
+                            <li><a href="/surveys">Surveys</a></li>
+                            <li><a href="/milestones">Milestones</a></li>
+                            <li><a href="/donations">Donations</a></li>
+                            <li><a href="/dashboard" class="active">Dashboard</a></li>
+                            <li><a href="/logout">Logout</a></li>
+                        <% } else { %>
+                            <li><a href="/dashboard" class="active">Dashboard</a></li>
+                            <li><a href="/login">Login</a></li>
+                        <% } %>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <% if (username) { %>
+        <section class="welcome-banner">
+            <div class="container">
+                <p class="welcome-message">
+                    Welcome back, <strong><%= username %></strong>! 
+                    <span class="user-role">(<%= level === 'M' ? 'Manager' : 'User' %>)</span>
+                </p>
+            </div>
+        </section>
+    <% } %>
+
+    <main class="page-container">
+        <div class="container-fluid">
+            <div class="dashboard-header">
+                <h2 class="page-title">Analytics Dashboard</h2>
+                <p class="dashboard-subtitle">View program insights and performance metrics</p>
+            </div>
+
+            <div class="dashboard-container">
+                <!-- Embed using iframe -->
+                <div class="tableau-viz-container">
+                    <iframe 
+                        id="tableau-dashboard"
+                        src="https://public.tableau.com/views/Book2_17647005227830/Dashboard1?:showVizHome=no&:embed=true"
+                        width="100%"
+                        height="100%"
+                        frameborder="0"
+                        allowfullscreen
+                    ></iframe>
+                </div>
+            </div>
+
+            <div class="dashboard-info">
+                <div class="info-card">
+                    <h3>Dashboard Information</h3>
+                    <ul>
+                        <li><strong>Last Updated:</strong> 12/1/2025</li>
+                        <li><strong>Data Source:</strong> Ella Rises Database</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; <%= new Date().getFullYear() %> Ella Rises. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

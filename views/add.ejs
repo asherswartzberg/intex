@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add <%= tableName %> | Ella Rises</title>
+    <link rel="stylesheet" href="/styles/main.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="/"><h1>Ella Rises</h1></a>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <% if (username) { %>
+                            <% if (level === 'M') { %>
+                                <li><a href="/users">Users</a></li>
+                            <% } %>
+                            <li><a href="/participants">Participants</a></li>
+                            <li><a href="/events">Events</a></li>
+                            <li><a href="/surveys">Surveys</a></li>
+                            <li><a href="/milestones">Milestones</a></li>
+                            <li><a href="/donations">Donations</a></li>
+                            <li><a href="/dashboard">Dashboard</a></li>
+                            <li><a href="/logout">Logout</a></li>
+                        <% } else { %>
+                            <li><a href="/dashboard">Dashboard</a></li>
+                            <li><a href="/login">Login</a></li>
+                        <% } %>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <% if (username) { %>
+        <section class="welcome-banner">
+            <div class="container">
+                <p class="welcome-message">
+                    Welcome back, <strong><%= username %></strong>! 
+                    <span class="user-role">(<%= level === 'M' ? 'Manager' : 'User' %>)</span>
+                </p>
+            </div>
+        </section>
+    <% } %>
+
+    <main class="page-container">
+        <div class="container">
+            <div class="form-page-header">
+                <h2 class="page-title">Add New <%= tableName %></h2>
+                <a href="/<%= returnPath === 'users' ? returnPath : returnPath + 's' %>" class="btn btn-secondary btn-small">Back to <%= tableName === 'users' ? tableName : tableName + 's' %></a>
+            </div>
+
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-error"><%= error %></div>
+            <% } %>
+
+            <div class="form-container">
+                <form action="/<%= returnPath %>/add" method="POST">
+                    <% columns.forEach(column => { %>
+                        <% if (!column.isPrimary && !column.isAutoIncrement) { %>
+                            <div class="form-group">
+                                <label for="<%= column.name %>">
+                                    <%= column.name.replace(/([A-Z])/g, ' $1').trim() %>
+                                    <% if (column.isRequired) { %><span class="required">*</span><% } %>
+                                </label>
+                                
+                                <% if (column.dataType === 'character varying' || column.dataType === 'varchar' || column.dataType === 'text') { %>
+                                    <% if (column.name === 'level') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="level-u" name="level" value="U" checked>
+                                                <label for="level-u" class="radio-label">User</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="level-m" name="level" value="M">
+                                                <label for="level-m" class="radio-label">Manager</label>
+                                            </div>
+                                        </div>
+                                    <% } else if (column.dataType === 'text') { %>
+                                        <textarea 
+                                            id="<%= column.name %>" 
+                                            name="<%= column.name %>"
+                                            <%= column.isRequired ? 'required' : '' %>
+                                            placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                        ></textarea>
+                                    <% } else { %>
+                                        <input 
+                                            type="text" 
+                                            id="<%= column.name %>" 
+                                            name="<%= column.name %>"
+                                            <%= column.isRequired ? 'required' : '' %>
+                                            <%= column.maxLength ? `maxlength="${column.maxLength}"` : '' %>
+                                            placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                        >
+                                    <% } %>
+                                
+                                <% } else if (column.dataType === 'integer' || column.dataType === 'int') { %>
+                                    <input 
+                                        type="number" 
+                                        id="<%= column.name %>" 
+                                        name="<%= column.name %>"
+                                        <%= column.isRequired ? 'required' : '' %>
+                                        step="1"
+                                        placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                    >
+                                
+                                <% } else if (column.dataType === 'decimal' || column.dataType === 'numeric' || column.dataType === 'float' || column.dataType === 'double') { %>
+                                    <input 
+                                        type="number" 
+                                        id="<%= column.name %>" 
+                                        name="<%= column.name %>"
+                                        <%= column.isRequired ? 'required' : '' %>
+                                        step="0.01"
+                                        placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                    >
+                                
+                                <% } else if (column.dataType === 'datetime' || column.dataType === 'timestamp' || column.dataType === 'date') { %>
+                                    <input 
+                                        type="<%= column.dataType === 'date' ? 'date' : 'datetime-local' %>" 
+                                        id="<%= column.name %>" 
+                                        name="<%= column.name %>"
+                                        <%= column.isRequired ? 'required' : '' %>
+                                    >
+                                
+                                <% } else if (column.dataType === 'boolean' || column.dataType === 'bit') { %>
+                                    <div class="checkbox-group">
+                                        <input 
+                                            type="checkbox" 
+                                            id="<%= column.name %>" 
+                                            name="<%= column.name %>"
+                                            value="true"
+                                        >
+                                        <label for="<%= column.name %>" class="checkbox-label">
+                                            <%= column.name.replace(/([A-Z])/g, ' $1').trim() %>
+                                        </label>
+                                    </div>
+                                
+                                <% } else { %>
+                                    <input 
+                                        type="text" 
+                                        id="<%= column.name %>" 
+                                        name="<%= column.name %>"
+                                        <%= column.isRequired ? 'required' : '' %>
+                                        placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                    >
+                                <% } %>
+                                
+                                <% if (column.hint) { %>
+                                    <small class="form-hint"><%= column.hint %></small>
+                                <% } %>
+                            </div>
+                        <% } %>
+                    <% }); %>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Add <%= tableName %></button>
+                        <a href="/<%= returnPath %>" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; <%= new Date().getFullYear() %> Ella Rises. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

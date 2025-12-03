@@ -1,0 +1,989 @@
+require('dotenv').config();
+const express = require("express");
+const session = require("express-session");
+let path = require("path");
+let bodyParser = require("body-parser");
+let app = express();
+app.set("view engine", "ejs");
+app.use("/styles", express.static(path.join(__dirname, "styles")));
+app.use("/images", express.static(path.join(__dirname, "images")));
+const port = process.env.PORT || 3000;
+
+app.use(
+    session(
+        {
+    secret: process.env.SESSION_SECRET || 'fallback-secret-key',
+    resave: false,
+    saveUninitialized: false,
+        }
+    )
+);
+
+const knex = require("knex")({
+    client: "pg",
+    connection: {
+        host: process.env.RDS_HOSTNAME || "localhost",
+        user: process.env.RDS_USERNAME || "postgres",
+        password: process.env.RDS_PASSWORD || "admin",
+        database: process.env.RDS_DB_NAME || "intex",
+        port: process.env.RDS_PORT || 5432,
+        // The new part 
+        ssl: process.env.DB_SSL ? {rejectUnauthorized: false} : false 
+    }
+});
+
+app.use(express.urlencoded({extended: true}));
+
+// Home page route - Pass session data to template
+app.get('/', (req, res) => {
+    res.render('index', {
+        username: req.session.username || null,
+        level: req.session.level || null
+    });
+});
+
+app.get('/dashboard', (req, res) => {
+    res.render('dashboard', {
+        username: req.session.username || null,
+        level: req.session.level || null
+    });
+});
+
+// Login GET route - Display login page
+app.get('/login', (req, res) => {
+    // Check if user is already logged in
+    if (req.session.username) {
+        return res.redirect('/');
+    }
+    
+    res.render('login', {
+        error: null,
+        message: null
+    });
+});
+
+// Login POST route - Handle login submission
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    
+    try {
+        // Validate input
+        if (!username || !password) {
+            return res.render('login', {
+                error: 'Please provide both username and password',
+                message: null
+            });
+        }
+        
+        // Query database for user
+        const user = await knex('users')
+            .where({ username: username })
+            .first();
+        
+        // Check if user exists
+        if (!user) {
+            return res.render('login', {
+                error: 'Invalid username or password',
+                message: null
+            });
+        }
+        
+        // Check if password matches
+        if (user.password !== password) {
+            return res.render('login', {
+                error: 'Invalid username or password',
+                message: null
+            });
+        }
+        
+        // Store user information in session
+        req.session.username = user.username;
+        req.session.level = user.level;
+        
+        // Redirect to home page or dashboard
+        res.redirect('/');
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        res.render('login', {
+            error: 'An error occurred during login. Please try again.',
+            message: null
+        });
+    }
+});
+
+// Logout route
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('Logout error:', err);
+            return res.redirect('/');
+        }
+        res.redirect('/login');
+    });
+});
+
+// Middleware to check if user is authenticated
+function isAuthenticated(req, res, next) {
+    if (req.session.username) {
+        return next();
+    }
+    res.redirect('/login');
+}
+
+// Example of protecting a route
+// app.get('/participants', isAuthenticated, (req, res) => {
+//     res.render('participants', {
+//         username: req.session.username,
+//         level: req.session.level
+//     });
+// });
+
+// ============== USERS ROUTES ==============
+
+// Display users page
+app.get('/users', isAuthenticated, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const search = req.query.search || '';
+
+        // Build query
+        let query = knex('users');
+        
+        if (search) {
+            query = query.where('username', 'like', `%${search}%`);
+        }
+
+        // Get total count
+        const countResult = await query.clone().count('* as count');
+        const totalRecords = countResult[0].count;
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        // Get paginated results
+        const users = await query
+            .select('*')
+            .limit(limit)
+            .offset(offset)
+            .orderBy('userid');
+
+        res.render('users', {
+            username: req.session.username,
+            level: req.session.level,
+            users,
+            currentPage: page,
+            totalPages,
+            totalRecords,
+            search,
+            message: req.query.message || null,
+            error: req.query.error || null
+        });
+    } catch (error) {
+        console.error('Users page error:', error);
+        res.render('users', {
+            username: req.session.username,
+            level: req.session.level,
+            users: [],
+            currentPage: 1,
+            totalPages: 1,
+            totalRecords: 0,
+            search: '',
+            message: null,
+            error: 'Error loading users'
+        });
+    }
+});
+
+// Delete user
+app.post('/users/delete/:userid', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect('/users?error=Unauthorized');
+    }
+
+    try {
+        await knex('users')
+            .where({ userid: req.params.userid })
+            .delete();
+        
+        res.redirect('/users?message=User deleted successfully');
+    } catch (error) {
+        console.error('Delete user error:', error);
+        res.redirect('/users?error=Error deleting user');
+    }
+});
+
+// ============== PARTICIPANTS ROUTES ==============
+
+// Display participants page
+app.get('/participants', isAuthenticated, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const search = req.query.search || '';
+
+        // Build query
+        let query = knex('participant');
+        
+        if (search) {
+            query = query.where(function() {
+                this.where('participantemail', 'like', `%${search}%`)
+                    .orWhere('participantfirstname', 'like', `%${search}%`)
+                    .orWhere('participantLastname', 'like', `%${search}%`);
+            });
+        }
+
+        // Get total count
+        const countResult = await query.clone().count('* as count');
+        const totalRecords = countResult[0].count;
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        // Get paginated results
+        const participants = await query
+            .select('*')
+            .limit(limit)
+            .offset(offset)
+            .orderBy('participantid');
+
+        res.render('participants', {
+            username: req.session.username,
+            level: req.session.level,
+            participants,
+            currentPage: page,
+            totalPages,
+            totalRecords,
+            search,
+            message: req.query.message || null,
+            error: req.query.error || null
+        });
+    } catch (error) {
+        console.error('Participants page error:', error);
+        res.render('participants', {
+            username: req.session.username,
+            level: req.session.level,
+            participants: [],
+            currentPage: 1,
+            totalPages: 1,
+            totalRecords: 0,
+            search: '',
+            message: null,
+            error: 'Error loading participants'
+        });
+    }
+});
+
+// Delete participant
+app.post('/participants/delete/:id', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect('/participants?error=Unauthorized');
+    }
+
+    try {
+        await knex('participant')
+            .where({ participantid: req.params.id })
+            .delete();
+        
+        res.redirect('/participants?message=Participant deleted successfully');
+    } catch (error) {
+        console.error('Delete participant error:', error);
+        res.redirect('/participants?error=Error deleting participant');
+    }
+});
+
+// ============== EVENTS ROUTES ==============
+
+// Display events page
+app.get('/events', isAuthenticated, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const search = req.query.search || '';
+
+        // Build query
+        let query = knex('event');
+        
+        if (search) {
+            query = query.where(function() {
+                this.where('eventname', 'like', `%${search}%`)
+                    .orWhere('eventtype', 'like', `%${search}%`);
+            });
+        }
+
+        // Get total count
+        const countResult = await query.clone().count('* as count');
+        const totalRecords = countResult[0].count;
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        // Get paginated results
+        const events = await query
+            .select('*')
+            .limit(limit)
+            .offset(offset)
+            .orderBy('eventname');
+
+        res.render('events', {
+            username: req.session.username,
+            level: req.session.level,
+            events,
+            currentPage: page,
+            totalPages,
+            totalRecords,
+            search,
+            message: req.query.message || null,
+            error: req.query.error || null
+        });
+    } catch (error) {
+        console.error('Events page error:', error);
+        res.render('events', {
+            username: req.session.username,
+            level: req.session.level,
+            events: [],
+            currentPage: 1,
+            totalPages: 1,
+            totalRecords: 0,
+            search: '',
+            message: null,
+            error: 'Error loading events'
+        });
+    }
+});
+
+// Delete event
+app.post('/events/delete/:id', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect('/events?error=Unauthorized');
+    }
+
+    try {
+        await knex('event')
+            .where({ eventname: req.params.id })
+            .delete();
+        
+        res.redirect('/events?message=Event deleted successfully');
+    } catch (error) {
+        console.error('Delete event error:', error);
+        res.redirect('/events?error=Error deleting event');
+    }
+});
+
+// ============== SURVEYS ROUTES ==============
+
+// Display surveys page
+app.get('/surveys', isAuthenticated, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const search = req.query.search || '';
+
+        // Build base query with joins
+        let baseQuery = knex('survey')
+            .join('registration', 'survey.registrationid', 'registration.registrationid')
+            .join('participant', 'registration.participantid', 'participant.participantid')
+            .join('eventoccurrence', 'registration.eventoccurrenceid', 'eventoccurrence.eventoccurrenceid')
+            .join('event', 'eventoccurrence.eventid', 'event.eventid');
+        
+        if (search) {
+            baseQuery = baseQuery.where('event.eventname', 'like', `%${search}%`);
+        }
+
+        // Get total count (separate query, no GROUP BY issue)
+        const countResult = await baseQuery.clone().count('survey.surveyid as count');
+        const totalRecords = countResult[0].count;
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        // Get paginated results
+        const surveys = await baseQuery.clone()
+            .select(
+                'survey.surveyid',
+                'event.eventname',
+                'participant.participantfirstname',
+                'survey.surveyoverallscore',
+                'survey.surveysubmissiondate'
+            )
+            .limit(limit)
+            .offset(offset)
+            .orderBy('survey.surveysubmissiondate', 'desc');
+
+        res.render('surveys', {
+            username: req.session.username,
+            level: req.session.level,
+            surveys,
+            currentPage: page,
+            totalPages,
+            totalRecords,
+            search,
+            message: req.query.message || null,
+            error: req.query.error || null
+        });
+    } catch (error) {
+        console.error('Surveys page error:', error);
+        res.render('surveys', {
+            username: req.session.username,
+            level: req.session.level,
+            surveys: [],
+            currentPage: 1,
+            totalPages: 1,
+            totalRecords: 0,
+            search: '',
+            message: null,
+            error: 'Error loading surveys'
+        });
+    }
+});
+
+// Delete survey
+app.post('/surveys/delete/:id', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect('/surveys?error=Unauthorized');
+    }
+
+    try {
+        await knex('survey')
+            .where({ surveyid: req.params.id })
+            .delete();
+        
+        res.redirect('/surveys?message=Survey deleted successfully');
+    } catch (error) {
+        console.error('Delete survey error:', error);
+        res.redirect('/surveys?error=Error deleting survey');
+    }
+});
+
+// ============== MILESTONES ROUTES ==============
+
+// Display milestones page
+app.get('/milestones', isAuthenticated, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const search = req.query.search || '';
+
+        // Build base query
+        let baseQuery = knex('milestone')
+            .join('participant', 'milestone.participantid', 'participant.participantid');
+        
+        if (search) {
+            baseQuery = baseQuery.where(function() {
+                this.where('participant.participantfirstname', 'like', `%${search}%`)
+                    .orWhere('milestone.milestonetitle', 'like', `%${search}%`);
+            });
+        }
+
+        // Get total count (separate query, no GROUP BY issue)
+        const countResult = await baseQuery.clone().count('milestone.milestoneid as count');
+        const totalRecords = countResult[0].count;
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        // Get paginated results
+        const milestones = await baseQuery.clone()
+            .select(
+                'milestone.milestoneid',
+                'participant.participantfirstname',
+                'milestone.milestonetitle',
+                'milestone.milestonedate'
+            )
+            .limit(limit)
+            .offset(offset)
+            .orderBy('milestone.milestonedate', 'desc');
+
+        res.render('milestones', {
+            username: req.session.username,
+            level: req.session.level,
+            milestones,
+            currentPage: page,
+            totalPages,
+            totalRecords,
+            search,
+            message: req.query.message || null,
+            error: req.query.error || null
+        });
+    } catch (error) {
+        console.error('Milestones page error:', error);
+        res.render('milestones', {
+            username: req.session.username,
+            level: req.session.level,
+            milestones: [],
+            currentPage: 1,
+            totalPages: 1,
+            totalRecords: 0,
+            search: '',
+            message: null,
+            error: 'Error loading milestones'
+        });
+    }
+});
+
+// Delete milestone
+app.post('/milestones/delete/:id', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect('/milestones?error=Unauthorized');
+    }
+
+    try {
+        await knex('milestone')
+            .where({ milestoneid: req.params.id })
+            .delete();
+        
+        res.redirect('/milestones?message=Milestone deleted successfully');
+    } catch (error) {
+        console.error('Delete milestone error:', error);
+        res.redirect('/milestones?error=Error deleting milestone');
+    }
+});
+
+// ============== DONATIONS ROUTES ==============
+
+// Display donations page
+app.get('/donations', isAuthenticated, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const search = req.query.search || '';
+
+        // Build base query with join
+        let baseQuery = knex('donation')
+            .join('participant', 'donation.participantid', 'participant.participantid');
+        
+        if (search) {
+            baseQuery = baseQuery.where('participant.participantfirstname', 'like', `%${search}%`);
+        }
+
+        // Get total count (separate query, no GROUP BY issue)
+        const countResult = await baseQuery.clone().count('donation.donationid as count');
+        const totalRecords = countResult[0].count;
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        // Get paginated results
+        const donations = await baseQuery.clone()
+            .select(
+                'donation.donationid',
+                'participant.participantfirstname',
+                'donation.donationdate',
+                'donation.donationamount'
+            )
+            .limit(limit)
+            .offset(offset)
+            .orderBy('donation.donationdate', 'desc');
+
+        res.render('donations', {
+            username: req.session.username,
+            level: req.session.level,
+            donations,
+            currentPage: page,
+            totalPages,
+            totalRecords,
+            search,
+            message: req.query.message || null,
+            error: req.query.error || null
+        });
+    } catch (error) {
+        console.error('Donations page error:', error);
+        res.render('donations', {
+            username: req.session.username,
+            level: req.session.level,
+            donations: [],
+            currentPage: 1,
+            totalPages: 1,
+            totalRecords: 0,
+            search: '',
+            message: null,
+            error: 'Error loading donations'
+        });
+    }
+});
+
+// Delete donation
+app.post('/donations/delete/:id', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect('/donations?error=Unauthorized');
+    }
+
+    try {
+        await knex('donation')
+            .where({ donationid: req.params.id })
+            .delete();
+        
+        res.redirect('/donations?message=Donation deleted successfully');
+    } catch (error) {
+        console.error('Delete donation error:', error);
+        res.redirect('/donations?error=Error deleting donation');
+    }
+});
+
+// ============== HELPER FUNCTION TO GET TABLE SCHEMA ==============
+
+async function getTableSchema(tableName, primaryKeyColumn = null) {
+    try {
+        // Get column information from database
+        const columns = await knex(tableName).columnInfo();
+        
+        // Transform column info into usable format
+        const columnArray = Object.keys(columns).map(columnName => {
+            const col = columns[columnName];
+            
+            return {
+                name: columnName,
+                dataType: col.type,
+                maxLength: col.maxLength,
+                isRequired: col.nullable === false,
+                isPrimary: false, // Will be set separately
+                isAutoIncrement: false, // Will be set separately
+                hint: null // Can be customized per field
+            };
+        });
+        
+        // If primary key is explicitly provided, use it
+        if (primaryKeyColumn) {
+            const primaryCol = columnArray.find(col => col.name === primaryKeyColumn);
+            if (primaryCol) {
+                primaryCol.isPrimary = true;
+                primaryCol.isAutoIncrement = true;
+            }
+        } else {
+            // Try to identify primary key (common patterns)
+            const primaryKeyPatterns = ['id', 'ID'];
+            
+            // First, try exact matches
+            let foundPrimary = false;
+            for (const col of columnArray) {
+                if (primaryKeyPatterns.some(pattern => col.name.toLowerCase() === pattern)) {
+                    col.isPrimary = true;
+                    col.isAutoIncrement = true;
+                    foundPrimary = true;
+                    break;
+                }
+            }
+            
+            // If not found, try pattern matching with table name
+            if (!foundPrimary) {
+                const tableNameLower = tableName.toLowerCase();
+                for (const col of columnArray) {
+                    const colNameLower = col.name.toLowerCase();
+                    if (colNameLower === `${tableNameLower}id` || 
+                        colNameLower.endsWith('id') && colNameLower.includes(tableNameLower)) {
+                        col.isPrimary = true;
+                        col.isAutoIncrement = true;
+                        foundPrimary = true;
+                        break;
+                    }
+                }
+            }
+            
+            // If still not found, use the first column that contains 'id'
+            if (!foundPrimary) {
+                for (const col of columnArray) {
+                    if (col.name.toLowerCase().includes('id')) {
+                        col.isPrimary = true;
+                        col.isAutoIncrement = true;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        return columnArray;
+    } catch (error) {
+        console.error('Error getting table schema:', error);
+        throw error;
+    }
+}
+
+// ============== MAPPING OF TABLES TO PRIMARY KEYS ==============
+const tablePrimaryKeys = {
+    'users': 'userid',
+    'participant': 'participantid',
+    'event': 'eventid',
+    'survey': 'surveyid',
+    'milestone': 'milestoneid',
+    'donation': 'donationid',
+    'registration': 'registrationid',
+    'eventoccurrence': 'eventoccurrenceid'
+    // Add more table mappings as needed
+};
+
+// ============== GENERIC ADD ROUTES ==============
+
+// Display add form
+app.get('/:table/add', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect(`/${req.params.table}?error=Unauthorized`);
+    }
+
+    try {
+        const tableName = req.params.table;
+        const primaryKey = tablePrimaryKeys[tableName] || null;
+        const columns = await getTableSchema(tableName, primaryKey);
+        
+        res.render('add', {
+            username: req.session.username,
+            level: req.session.level,
+            tableName: tableName,
+            returnPath: tableName,
+            columns,
+            error: null
+        });
+    } catch (error) {
+        console.error('Add form error:', error);
+        res.redirect(`/${req.params.table}?error=Error loading add form`);
+    }
+});
+
+// Handle add form submission
+app.post('/:table/add', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect(`/${req.params.table}s?error=Unauthorized`);
+    }
+
+    try {
+        const tableName = req.params.table;
+        const data = {};
+        
+        // Process form data
+        for (const [key, value] of Object.entries(req.body)) {
+            // Handle checkboxes (boolean values)
+            if (value === 'true') {
+                data[key] = true;
+            } else if (value === '' || value === null) {
+                data[key] = null;
+            } else {
+                data[key] = value;
+            }
+        }
+        
+        // Insert into database
+        await knex(tableName).insert(data);
+        
+        res.redirect(`/${tableName}s?message=Record added successfully`);
+    } catch (error) {
+        console.error('Add record error:', error);
+        res.redirect(`/${req.params.table}/add?error=Error adding record: ${error.message}`);
+    }
+});
+
+// ============== GENERIC EDIT ROUTES ==============
+
+// Display edit form
+app.get('/:table/edit/:id', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect(`/${req.params.table}s?error=Unauthorized`);
+    }
+
+    try {
+        const tableName = req.params.table;
+        const recordId = req.params.id;
+        const primaryKey = tablePrimaryKeys[tableName] || null;
+        const columns = await getTableSchema(tableName, primaryKey);
+        
+        // Find the primary key column
+        const primaryKeyCol = columns.find(col => col.isPrimary);
+        if (!primaryKeyCol) {
+            throw new Error(`No primary key found for table ${tableName}. Please add it to tablePrimaryKeys mapping.`);
+        }
+        
+        // Get the record
+        const record = await knex(tableName)
+            .where(primaryKeyCol.name, recordId)
+            .first();
+        
+        if (!record) {
+            return res.redirect(`/${tableName}s?error=Record not found`);
+        }
+        
+        res.render('edit', {
+            username: req.session.username,
+            level: req.session.level,
+            tableName: tableName.charAt(0).toUpperCase() + tableName.slice(1),
+            returnPath: tableName,
+            columns,
+            record,
+            recordId,
+            error: null
+        });
+    } catch (error) {
+        console.error('Edit form error:', error);
+        res.redirect(`/${req.params.table}s?error=Error loading edit form: ${error.message}`);
+    }
+});
+
+// Handle edit form submission
+app.post('/:table/edit/:id', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect(`/${req.params.table}s?error=Unauthorized`);
+    }
+
+    try {
+        const tableName = req.params.table;
+        const recordId = req.params.id;
+        const primaryKey = tablePrimaryKeys[tableName] || null;
+        const columns = await getTableSchema(tableName, primaryKey);
+        
+        // Find the primary key column
+        const primaryKeyCol = columns.find(col => col.isPrimary);
+        if (!primaryKeyCol) {
+            throw new Error(`No primary key found for table ${tableName}. Please add it to tablePrimaryKeys mapping.`);
+        }
+        
+        const data = {};
+        
+        // Process form data
+        for (const [key, value] of Object.entries(req.body)) {
+            // Skip primary key
+            if (key === primaryKeyCol.name) continue;
+            
+            // Handle checkboxes (boolean values)
+            if (value === 'true') {
+                data[key] = true;
+            } else if (value === '' || value === null) {
+                data[key] = null;
+            } else {
+                data[key] = value;
+            }
+        }
+        
+        // Handle unchecked checkboxes (they don't send a value)
+        columns.forEach(col => {
+            if ((col.dataType === 'boolean' || col.dataType === 'bit') && 
+                !col.isPrimary && 
+                !(col.name in req.body)) {
+                data[col.name] = false;
+            }
+        });
+        
+        // Update in database
+        await knex(tableName)
+            .where(primaryKeyCol.name, recordId)
+            .update(data);
+        
+        res.redirect(`/${tableName}s?message=Record updated successfully`);
+    } catch (error) {
+        console.error('Update record error:', error);
+        res.redirect(`/${req.params.table}/edit/${req.params.id}?error=Error updating record: ${error.message}`);
+    }
+});
+
+// ============== SPECIFIC TABLE ROUTES (for custom schemas) ==============
+
+// Example: Custom schema for users table
+app.get('/users/add', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect('/users?error=Unauthorized');
+    }
+
+    const columns = [
+        { name: 'userid', dataType: 'integer', isRequired: true, isPrimary: true, isAutoIncrement: true },
+        { name: 'username', dataType: 'character varying', maxLength: 100, isRequired: true },
+        { name: 'password', dataType: 'character varying', maxLength: 255, isRequired: true, hint: 'Enter a secure password' },
+        { name: 'level', dataType: 'character varying', maxLength: 1, isRequired: true, hint: 'M for Manager, U for User' }
+    ];
+    
+    res.render('add', {
+        username: req.session.username,
+        level: req.session.level,
+        tableName: 'User',
+        returnPath: 'users',
+        columns,
+        error: null
+    });
+});
+
+app.post('/users/add', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect('/users?error=Unauthorized');
+    }
+
+    try {
+        const { username, password, level } = req.body;
+        
+        // Optional: Hash password here with bcrypt
+        // const hashedPassword = await bcrypt.hash(password, 10);
+        
+        await knex('users').insert({
+            username,
+            password, // Use hashedPassword if hashing
+            level
+        });
+        
+        res.redirect('/users?message=User added successfully');
+    } catch (error) {
+        console.error('Add user error:', error);
+        res.redirect('/users/add?error=Error adding user');
+    }
+});
+
+// Example: Custom edit for users
+app.get('/users/edit/:id', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect('/users?error=Unauthorized');
+    }
+
+    try {
+        const user = await knex('users')
+            .where('userid', req.params.id)
+            .first();
+        
+        if (!user) {
+            return res.redirect('/users?error=User not found');
+        }
+        
+        const columns = [
+            { name: 'userid', dataType: 'integer', isRequired: true, isPrimary: true, isAutoIncrement: true },
+            { name: 'username', dataType: 'character varying', maxLength: 100, isRequired: true },
+            { name: 'password', dataType: 'character varying', maxLength: 255, isRequired: false, hint: 'Leave blank to keep current password' },
+            { name: 'level', dataType: 'character varying', maxLength: 1, isRequired: true, hint: 'M for Manager, U for User' }
+        ];
+        
+        res.render('edit', {
+            username: req.session.username,
+            level: req.session.level,
+            tableName: 'User',
+            returnPath: 'users',
+            columns,
+            record: user,
+            recordId: req.params.id,
+            error: null
+        });
+    } catch (error) {
+        console.error('Edit user error:', error);
+        res.redirect('/users?error=Error loading user');
+    }
+});
+
+app.post('/users/edit/:id', isAuthenticated, async (req, res) => {
+    if (req.session.level !== 'M') {
+        return res.redirect('/users?error=Unauthorized');
+    }
+
+    try {
+        const { username, password, level } = req.body;
+        const updateData = { username, level };
+        
+        // Only update password if provided
+        if (password && password.trim() !== '') {
+            // Optional: Hash password here with bcrypt
+            // updateData.password = await bcrypt.hash(password, 10);
+            updateData.password = password;
+        }
+        
+        await knex('users')
+            .where('userid', req.params.id)
+            .update(updateData);
+        
+        res.redirect('/users?message=User updated successfully');
+    } catch (error) {
+        console.error('Update user error:', error);
+        res.redirect(`/users/edit/${req.params.id}?error=Error updating user`);
+    }
+});
+
+app.get("/teapot", (req, res) => {
+    res.sendStatus(418);
+});
+
+app.listen(port, () => {
+    console.log("The server is listening");
+});
