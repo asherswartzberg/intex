@@ -64,7 +64,7 @@
                         <% if (!column.isPrimary && !column.isAutoIncrement) { %>
                             <div class="form-group">
                                 <label for="<%= column.name %>">
-                                    <%= column.name.replace(/([A-Z])/g, ' $1').trim() %>
+                                    <%= formatName(column.name) %>
                                     <% if (column.isRequired) { %><span class="required">*</span><% } %>
                                 </label>
                                 
@@ -80,12 +80,72 @@
                                                 <label for="level-m" class="radio-label">Manager</label>
                                             </div>
                                         </div>
+                                    <% } else if (column.name === 'participantfieldofinterest') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="STEM" name=<%= column.name %> value="STEM" checked>
+                                                <label for="STEM" class="radio-label">STEM</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Arts" name=<%= column.name %> value="Arts">
+                                                <label for="Arts" class="radio-label">Arts</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Both" name=<%= column.name %> value="Both">
+                                                <label for="Both" class="radio-label">Both</label>
+                                            </div>
+                                        </div>
+                                    <% } else if (column.name === 'eventtype') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="STEM" name=<%= column.name %> value="STEM" checked>
+                                                <label for="STEM" class="radio-label">STEM</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Arts" name=<%= column.name %> value="Arts">
+                                                <label for="Arts" class="radio-label">Arts</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Leadership" name=<%= column.name %> value="Leadership">
+                                                <label for="Leadership" class="radio-label">Leadership</label>
+                                            </div>
+                                        </div>
+                                    <% } else if (column.name === 'eventrecurrencepattern') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="Weekly" name=<%= column.name %> value="Weekly" checked>
+                                                <label for="Weekly" class="radio-label">Weekly</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Monthly" name=<%= column.name %> value="Monthly">
+                                                <label for="Monthly" class="radio-label">Monthly</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Annual" name=<%= column.name %> value="Annual">
+                                                <label for="Annual" class="radio-label">Annual</label>
+                                            </div>
+                                        </div>
+                                    <% } else if (column.name === 'surveynpsbucket') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="Promoter" name=<%= column.name %> value="Promoter" checked>
+                                                <label for="Promoter" class="radio-label">Promoter</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Passive" name=<%= column.name %> value="Passive">
+                                                <label for="Passive" class="radio-label">Passive</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Detractor" name=<%= column.name %> value="Detractor">
+                                                <label for="Detractor" class="radio-label">Detractor</label>
+                                            </div>
+                                        </div>
                                     <% } else if (column.dataType === 'text') { %>
                                         <textarea 
                                             id="<%= column.name %>" 
                                             name="<%= column.name %>"
                                             <%= column.isRequired ? 'required' : '' %>
-                                            placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                            placeholder="Enter <%= formatName(column.name) %>"
                                         ></textarea>
                                     <% } else { %>
                                         <input 
@@ -94,7 +154,7 @@
                                             name="<%= column.name %>"
                                             <%= column.isRequired ? 'required' : '' %>
                                             <%= column.maxLength ? `maxlength="${column.maxLength}"` : '' %>
-                                            placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                            placeholder="Enter <%= formatName(column.name) %>"
                                         >
                                     <% } %>
                                 
@@ -105,7 +165,7 @@
                                         name="<%= column.name %>"
                                         <%= column.isRequired ? 'required' : '' %>
                                         step="1"
-                                        placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                        placeholder="Enter <%= formatName(column.name) %>"
                                     >
                                 
                                 <% } else if (column.dataType === 'decimal' || column.dataType === 'numeric' || column.dataType === 'float' || column.dataType === 'double') { %>
@@ -115,7 +175,7 @@
                                         name="<%= column.name %>"
                                         <%= column.isRequired ? 'required' : '' %>
                                         step="0.01"
-                                        placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                        placeholder="Enter <%= formatName(column.name) %>"
                                     >
                                 
                                 <% } else if (column.dataType === 'datetime' || column.dataType === 'timestamp' || column.dataType === 'date') { %>
@@ -135,7 +195,7 @@
                                             value="true"
                                         >
                                         <label for="<%= column.name %>" class="checkbox-label">
-                                            <%= column.name.replace(/([A-Z])/g, ' $1').trim() %>
+                                            <%= formatName(column.name) %>
                                         </label>
                                     </div>
                                 
@@ -145,7 +205,7 @@
                                         id="<%= column.name %>" 
                                         name="<%= column.name %>"
                                         <%= column.isRequired ? 'required' : '' %>
-                                        placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                        placeholder="Enter <%= formatName(column.name) %>"
                                     >
                                 <% } %>
                                 
@@ -158,7 +218,7 @@
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">Add <%= tableName %></button>
-                        <a href="/<%= returnPath %>" class="btn btn-secondary">Cancel</a>
+                        <a href="/<%= returnPath === 'users' ? returnPath : returnPath + 's' %>" class="btn btn-secondary">Cancel</a>
                     </div>
                 </form>
             </div>

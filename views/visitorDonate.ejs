@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donate | Ella Rises</title>
+    <link rel="stylesheet" href="/styles/main.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="/"><h1>Ella Rises</h1></a>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <% if (username) { %>
+                            <% if (level === 'M') { %>
+                                <li><a href="/users">Users</a></li>
+                            <% } %>
+                            <li><a href="/participants">Participants</a></li>
+                            <li><a href="/events">Events</a></li>
+                            <li><a href="/surveys">Surveys</a></li>
+                            <li><a href="/milestones">Milestones</a></li>
+                            <li><a href="/donations">Donations</a></li>
+                            <li><a href="/dashboard">Dashboard</a></li>
+                            <li><a href="/logout">Logout</a></li>
+                        <% } else { %>
+                            <li><a href="/dashboard">Dashboard</a></li>
+                            <li><a href="/login">Login</a></li>
+                        <% } %>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-container">
+        <div class="container">
+            <div class="form-page-header">
+                <h2 class="page-title">Record Donation</h2>
+                <a href="/" class="btn btn-secondary btn-small">Return Home</a>
+            </div>
+
+            <% if (typeof message !== 'undefined' && message) { %>
+                <div class="alert alert-success"><%= message %></div>
+            <% } %>
+            <% if (typeof error_message !== 'undefined' && error_message) { %>
+                <div class="alert alert-error"><%= error_message %></div>
+            <% } %>
+
+            <div class="form-container">
+                <form id="myForm" action="/visitorDonate" method="post">
+                    <div class="form-group">
+                        <label for="participantid">Participant ID</label>
+                        <input type="number" name="participantid" id="participantid" placeholder="Enter Participant ID" required>
+                        <label for="donationamount">Donation Amount</label>
+                        <input type="number" name="donationamount" id="donationamount" min="0" max="99999999" step="0.01" placeholder="How much did you donate?" required>
+                        <input type="hidden" name="donationdate" id="donationdate">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <a href="/" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; <%= new Date().getFullYear() %> Ella Rises. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    <script>
+        document.getElementById("myForm").addEventListener("submit", () => {
+            document.getElementById("donationdate").value =
+                new Date().toISOString();
+        });
+    </script>
+</body>
+</html>

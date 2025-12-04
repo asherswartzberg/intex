@@ -230,7 +230,7 @@ app.get('/participants', isAuthenticated, async (req, res) => {
             query = query.where(function() {
                 this.where('participantemail', 'like', `%${search}%`)
                     .orWhere('participantfirstname', 'like', `%${search}%`)
-                    .orWhere('participantLastname', 'like', `%${search}%`);
+                    .orWhere('participantlastname', 'like', `%${search}%`);
             });
         }
 
@@ -615,6 +615,49 @@ app.post('/donations/delete/:id', isAuthenticated, async (req, res) => {
     }
 });
 
+app.locals.formatName = function(name) {
+    return name
+        .replace(/participant/, "Participant ")
+        .replace(/event/, "Event ")
+        .replace(/survey/, "Survey ")
+        .replace(/donations/, "Donations")
+        .replace(/donation/, "Donation ")
+        .replace(/registration/, "Registration ")
+        .replace(/milestone/, "Milestone ")
+        .replace(/total/, "Total ")
+        .replace(/id/, "ID")
+        .replace(/email/, "Email")
+        .replace(/firstname/, "First Name")
+        .replace(/lastname/, "Last Name")
+        .replace(/dob/, "Date Of Birth")
+        .replace(/role/, "Role")
+        .replace(/phone/, "Phone")
+        .replace(/city/, "City")
+        .replace(/state/, "State")
+        .replace(/zip/, "ZIP Code")
+        .replace(/schooloremployer/, "School Or Employer")
+        .replace(/fieldofinterest/, "Field Of Interest")
+        .replace(/name/, "Name")
+        .replace(/type/, "Type")
+        .replace(/description/, "Description")
+        .replace(/recurrencepattern/, "Recurrence Pattern")
+        .replace(/defaultcapacity/, "Default Capacity")
+        .replace(/sastisfaction/, "Satisfaction")
+        .replace(/usefulness/, "Usefulness")
+        .replace(/instructor/, "Instructor")
+        .replace(/recommendation/, "Recommendation")
+        .replace(/overall/, "Overall")
+        .replace(/score/, " Score")
+        .replace(/npsbucket/, "NPS Bucket")
+        .replace(/comments/, "Comments")
+        .replace(/submissiondate/, "Submission Date")
+        .replace(/title/, "Title")
+        .replace(/date/, "Date")
+        .replace(/number/, "Number")
+        .replace(/amount/, "Amount")
+        .trim();
+};
+
 // ============== HELPER FUNCTION TO GET TABLE SCHEMA ==============
 
 async function getTableSchema(tableName, primaryKeyColumn = null) {
@@ -736,7 +779,7 @@ app.get('/:table/add', isAuthenticated, async (req, res) => {
 // Handle add form submission
 app.post('/:table/add', isAuthenticated, async (req, res) => {
     if (req.session.level !== 'M') {
-        return res.redirect(`/${req.params.table}s?error=Unauthorized`);
+        return res.redirect(`/${(req.params.table === 'users' ? req.params.table : req.params.table + 's')}?error=Unauthorized`);
     }
 
     try {
@@ -758,7 +801,7 @@ app.post('/:table/add', isAuthenticated, async (req, res) => {
         // Insert into database
         await knex(tableName).insert(data);
         
-        res.redirect(`/${tableName}s?message=Record added successfully`);
+        res.redirect(`/${(tableName === 'users' ? tableName : tableName + 's')}?message=Record added successfully`);
     } catch (error) {
         console.error('Add record error:', error);
         res.redirect(`/${req.params.table}/add?error=Error adding record: ${error.message}`);
@@ -770,7 +813,7 @@ app.post('/:table/add', isAuthenticated, async (req, res) => {
 // Display edit form
 app.get('/:table/edit/:id', isAuthenticated, async (req, res) => {
     if (req.session.level !== 'M') {
-        return res.redirect(`/${req.params.table}s?error=Unauthorized`);
+        return res.redirect(`/${(req.params.table === 'users' ? req.params.table : req.params.table + 's')}?error=Unauthorized`);
     }
 
     try {
@@ -791,7 +834,7 @@ app.get('/:table/edit/:id', isAuthenticated, async (req, res) => {
             .first();
         
         if (!record) {
-            return res.redirect(`/${tableName}s?error=Record not found`);
+            return res.redirect(`/${(tableName === 'users' ? tableName : tableName + 's')}?error=Record not found`);
         }
         
         res.render('edit', {
@@ -806,14 +849,14 @@ app.get('/:table/edit/:id', isAuthenticated, async (req, res) => {
         });
     } catch (error) {
         console.error('Edit form error:', error);
-        res.redirect(`/${req.params.table}s?error=Error loading edit form: ${error.message}`);
+        res.redirect(`/${(req.params.table === 'users' ? req.params.table : req.params.table + 's')}?error=Error loading edit form: ${error.message}`);
     }
 });
 
 // Handle edit form submission
 app.post('/:table/edit/:id', isAuthenticated, async (req, res) => {
     if (req.session.level !== 'M') {
-        return res.redirect(`/${req.params.table}s?error=Unauthorized`);
+        return res.redirect(`/${(req.params.table === 'users' ? req.params.table : req.params.table + 's')}?error=Unauthorized`);
     }
 
     try {
@@ -859,7 +902,7 @@ app.post('/:table/edit/:id', isAuthenticated, async (req, res) => {
             .where(primaryKeyCol.name, recordId)
             .update(data);
         
-        res.redirect(`/${tableName}s?message=Record updated successfully`);
+        res.redirect(`/${(tableName === 'users' ? tableName : tableName + 's')}?message=Record updated successfully`);
     } catch (error) {
         console.error('Update record error:', error);
         res.redirect(`/${req.params.table}/edit/${req.params.id}?error=Error updating record: ${error.message}`);
@@ -978,6 +1021,115 @@ app.post('/users/edit/:id', isAuthenticated, async (req, res) => {
         console.error('Update user error:', error);
         res.redirect(`/users/edit/${req.params.id}?error=Error updating user`);
     }
+});
+
+app.get("/visitorSurvey", (req, res) => {
+    res.render("visitorSurvey", {
+        message: "",
+        error_message: "",
+        username: req.session.username || null,
+        level: req.session.level || null
+    });
+});
+
+app.post("/visitorSurvey", (req, res) => {
+    const { registrationid, surveysatisfactionscore, surveyusefulnessscore, surveyinstructorscore, surveyrecommendationscore, surveycomments, surveysubmissiondate } = req.body;
+    const surveyoverallscore = Math.round((surveysatisfactionscore + surveyusefulnessscore + surveyinstructorscore + surveyrecommendationscore) / 4);
+    let surveynpsbucket = ""
+    if (surveyrecommendationscore == 5) {
+        surveynpsbucket = "Promoter";
+    } else if (surveyrecommendationscore == 4) {
+        surveynpsbucket = "Passive";
+    } else {
+        surveynpsbucket = "Detractor";
+    }
+    const newSurvey = {
+        registrationid, surveysatisfactionscore,
+        surveyusefulnessscore, surveyinstructorscore,
+        surveyrecommendationscore, surveyoverallscore,
+        surveynpsbucket, surveycomments, surveysubmissiondate
+    };
+    knex("survey")
+        .insert(newSurvey)
+        .then(() => {
+            res.render("visitorSurvey", {
+                message: "Response submitted",
+                error_message: "",
+                username: req.session.username || null,
+                level: req.session.level || null
+            });
+        })
+        .catch((error) => {
+            console.log("Survey submit error: ", error);
+            res.render("visitorSurvey", {
+                message: "",
+                error_message: "Unable to submit",
+                username: req.session.username || null,
+                level: req.session.level || null
+            });
+        })
+});
+
+app.get("/visitorMilestone", (req, res) => {
+    res.render("visitorMilestone", {
+        message: "",
+        error_message: "",
+        username: req.session.username || null,
+        level: req.session.level || null
+    });
+});
+
+app.post("/visitorMilestone", (req, res) => {
+    knex("milestone")
+        .insert(req.body)
+        .then(() => {
+            res.render("visitorMilestone", {
+                message: "Milestone recorded",
+                error_message: "",
+                username: req.session.username || null,
+                level: req.session.level || null
+            });
+        })
+        .catch((error) => {
+            console.log("Milestone submit error: ", error);
+            res.render("visitorMilestone", {
+                message: "",
+                error_message: "Unable to submit",
+                username: req.session.username || null,
+                level: req.session.level || null
+            });
+        })
+});
+
+app.get("/visitorDonate", (req, res) => {
+    res.render("visitorDonate", {
+        message: "",
+        error_message: "",
+        username: req.session.username || null,
+        level: req.session.level || null
+    });
+});
+
+app.post("/visitorDonate", (req, res) => {
+    knex("donation")
+        .insert(req.body)
+        .then(() => {
+            res.render("visitorDonate", {
+                message: "Donation recorded",
+                error_message: "",
+                username: req.session.username || null,
+                level: req.session.level || null
+            });
+        })
+        .catch((error) => {
+            console.log("Donation submit error: ", error);
+            res.render("visitorDonate", {
+                message: "",
+                error_message: "Unable to submit",
+                username: req.session.username || null,
+                level: req.session.level || null
+            });
+        })
 });
 
 app.get("/teapot", (req, res) => {

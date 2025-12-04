@@ -51,7 +51,7 @@
         <div class="container">
             <div class="form-page-header">
                 <h2 class="page-title">Edit <%= tableName %></h2>
-                <a href="/<%= returnPath === 'users' ? returnPath : returnPath + 's' %>" class="btn btn-secondary btn-small">Back to <%= tableName === 'users' ? tableName : tableName + 's' %></a>
+                <a href="/<%= returnPath === 'users' ? returnPath : returnPath + 's' %>" class="btn btn-secondary btn-small">Back to <%= tableName === 'Users' ? tableName : tableName + 's' %></a>
             </div>
 
             <% if (typeof error !== 'undefined' && error) { %>
@@ -63,7 +63,7 @@
                     <% columns.forEach(column => { %>
                         <div class="form-group">
                             <label for="<%= column.name %>">
-                                <%= column.name.replace(/([A-Z])/g, ' $1').trim() %>
+                                <%= formatName(column.name) %>
                                 <% if (column.isRequired) { %><span class="required">*</span><% } %>
                             </label>
                             
@@ -102,12 +102,200 @@
                                             </div>
                                         </div>
                                     <% } %>
+                                <% } else if (column.name === 'participantfieldofinterest') { %>
+                                    <% if (record[column.name] === 'STEM') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="STEM" name=<%= column.name %> value="STEM" checked>
+                                                <label for="STEM" class="radio-label">STEM</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Arts" name=<%= column.name %> value="Arts">
+                                                <label for="Arts" class="radio-label">Arts</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Both" name=<%= column.name %> value="Both">
+                                                <label for="Both" class="radio-label">Both</label>
+                                            </div>
+                                        </div>
+                                    <% } else if (record[column.name] == 'Arts') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="STEM" name=<%= column.name %> value="STEM">
+                                                <label for="STEM" class="radio-label">STEM</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Arts" name=<%= column.name %> value="Arts" checked>
+                                                <label for="Arts" class="radio-label">Arts</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Both" name=<%= column.name %> value="Both">
+                                                <label for="Both" class="radio-label">Both</label>
+                                            </div>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="STEM" name=<%= column.name %> value="STEM">
+                                                <label for="STEM" class="radio-label">STEM</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Arts" name=<%= column.name %> value="Arts">
+                                                <label for="Arts" class="radio-label">Arts</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Both" name=<%= column.name %> value="Both" checked>
+                                                <label for="Both" class="radio-label">Both</label>
+                                            </div>
+                                        </div>
+                                    <% } %>
+                                <% } else if (column.name === 'eventtype') { %>
+                                    <% if (record[column.name] === 'STEM') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="STEM" name=<%= column.name %> value="STEM" checked>
+                                                <label for="STEM" class="radio-label">STEM</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Arts" name=<%= column.name %> value="Arts">
+                                                <label for="Arts" class="radio-label">Arts</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Leadership" name=<%= column.name %> value="Leadership">
+                                                <label for="Leadership" class="radio-label">Leadership</label>
+                                            </div>
+                                        </div>
+                                    <% } else if (record[column.name] == 'Arts') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="STEM" name=<%= column.name %> value="STEM">
+                                                <label for="STEM" class="radio-label">STEM</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Arts" name=<%= column.name %> value="Arts" checked>
+                                                <label for="Arts" class="radio-label">Arts</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Leadership" name=<%= column.name %> value="Leadership">
+                                                <label for="Leadership" class="radio-label">Leadership</label>
+                                            </div>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="STEM" name=<%= column.name %> value="STEM">
+                                                <label for="STEM" class="radio-label">STEM</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Arts" name=<%= column.name %> value="Arts">
+                                                <label for="Arts" class="radio-label">Arts</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Leadership" name=<%= column.name %> value="Leadership" checked>
+                                                <label for="Leadership" class="radio-label">Leadership</label>
+                                            </div>
+                                        </div>
+                                    <% } %>
+                                <% } else if (column.name === 'eventrecurrencepattern') { %>
+                                    <% if (record[column.name] === 'Weekly') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="Weekly" name=<%= column.name %> value="Weekly" checked>
+                                                <label for="Weekly" class="radio-label">Weekly</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Monthly" name=<%= column.name %> value="Monthly">
+                                                <label for="Monthly" class="radio-label">Monthly</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Annual" name=<%= column.name %> value="Annual">
+                                                <label for="Annual" class="radio-label">Annual</label>
+                                            </div>
+                                        </div>
+                                    <% } else if (record[column.name] == 'Monthly') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="Weekly" name=<%= column.name %> value="Weekly">
+                                                <label for="Weekly" class="radio-label">Weekly</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Monthly" name=<%= column.name %> value="Monthly" checked>
+                                                <label for="Monthly" class="radio-label">Monthly</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Annual" name=<%= column.name %> value="Annual">
+                                                <label for="Annual" class="radio-label">Annual</label>
+                                            </div>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="Weekly" name=<%= column.name %> value="Weekly">
+                                                <label for="Weekly" class="radio-label">Weekly</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Monthly" name=<%= column.name %> value="Monthly">
+                                                <label for="Monthly" class="radio-label">Monthly</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Annual" name=<%= column.name %> value="Annual" checked>
+                                                <label for="Annual" class="radio-label">Annual</label>
+                                            </div>
+                                        </div>
+                                    <% } %>
+                                <% } else if (column.name === 'surveynpsbucket') { %>
+                                    <% if (record[column.name] === 'Promoter') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="Promoter" name=<%= column.name %> value="Promoter" checked>
+                                                <label for="Promoter" class="radio-label">Promoter</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Passive" name=<%= column.name %> value="Passive">
+                                                <label for="Passive" class="radio-label">Passive</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Detractor" name=<%= column.name %> value="Detractor">
+                                                <label for="Detractor" class="radio-label">Detractor</label>
+                                            </div>
+                                        </div>
+                                    <% } else if (record[column.name] == 'Passive') { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="Promoter" name=<%= column.name %> value="Promoter">
+                                                <label for="Promoter" class="radio-label">Promoter</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Passive" name=<%= column.name %> value="Passive" checked>
+                                                <label for="Passive" class="radio-label">Passive</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Detractor" name=<%= column.name %> value="Detractor">
+                                                <label for="Detractor" class="radio-label">Detractor</label>
+                                            </div>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="radio-group horizontal">
+                                            <div class="radio-option">
+                                                <input type="radio" id="Promoter" name=<%= column.name %> value="Promoter">
+                                                <label for="Promoter" class="radio-label">Promoter</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Passive" name=<%= column.name %> value="Passive">
+                                                <label for="Passive" class="radio-label">Passive</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="Detractor" name=<%= column.name %> value="Detractor" checked>
+                                                <label for="Detractor" class="radio-label">Detractor</label>
+                                            </div>
+                                        </div>
+                                    <% } %>
                                 <% } else if (column.dataType === 'text') { %>
                                     <textarea 
                                         id="<%= column.name %>" 
                                         name="<%= column.name %>"
                                         <%= column.isRequired ? 'required' : '' %>
-                                        placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                        placeholder="Enter <%= formatName(column.name) %>"
                                     ><%= record[column.name] || '' %></textarea>
                                 <% } else { %>
                                     <input 
@@ -117,7 +305,7 @@
                                         value="<%= record[column.name] || '' %>"
                                         <%= column.isRequired ? 'required' : '' %>
                                         <%= column.maxLength ? `maxlength="${column.maxLength}"` : '' %>
-                                        placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                        placeholder="Enter <%= formatName(column.name) %>"
                                     >
                                 <% } %>
                             
@@ -129,7 +317,7 @@
                                     value="<%= record[column.name] || '' %>"
                                     <%= column.isRequired ? 'required' : '' %>
                                     step="1"
-                                    placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                    placeholder="Enter <%= formatName(column.name) %>"
                                 >
                             
                             <% } else if (column.dataType === 'decimal' || column.dataType === 'numeric' || column.dataType === 'float' || column.dataType === 'double') { %>
@@ -140,7 +328,7 @@
                                     value="<%= record[column.name] || '' %>"
                                     <%= column.isRequired ? 'required' : '' %>
                                     step="0.01"
-                                    placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                    placeholder="Enter <%= formatName(column.name) %>"
                                 >
                             
                             <% } else if (column.dataType === 'datetime' || column.dataType === 'timestamp') { %>
@@ -185,7 +373,7 @@
                                         <%= record[column.name] ? 'checked' : '' %>
                                     >
                                     <label for="<%= column.name %>" class="checkbox-label">
-                                        <%= column.name.replace(/([A-Z])/g, ' $1').trim() %>
+                                        <%= formatName(column.name) %>
                                     </label>
                                 </div>
                             
@@ -196,7 +384,7 @@
                                     name="<%= column.name %>"
                                     value="<%= record[column.name] || '' %>"
                                     <%= column.isRequired ? 'required' : '' %>
-                                    placeholder="Enter <%= column.name.replace(/([A-Z])/g, ' $1').trim().toLowerCase() %>"
+                                    placeholder="Enter <%= formatName(column.name) %>"
                                 >
                             <% } %>
                             
@@ -208,7 +396,7 @@
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">Update <%= tableName %></button>
-                        <a href="/<%= returnPath %>" class="btn btn-secondary">Cancel</a>
+                        <a href="/<%= returnPath === 'users' ? returnPath : returnPath + 's' %>" class="btn btn-secondary">Cancel</a>
                     </div>
                 </form>
             </div>
