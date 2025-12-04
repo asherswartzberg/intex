@@ -1080,25 +1080,42 @@ app.get("/visitorMilestone", (req, res) => {
 });
 
 app.post("/visitorMilestone", (req, res) => {
-    knex("milestone")
-        .insert(req.body)
-        .then(() => {
-            res.render("visitorMilestone", {
-                message: "Milestone recorded",
-                error_message: "",
-                username: req.session.username || null,
-                level: req.session.level || null
-            });
+    const { participantemail, milestonetitle, milestonedate } = req.body;
+    knex("participant")
+        .where("participantemail", participantemail)
+        .first()
+        .then((participant) => {
+            const participantid = participant.participantid;
+            const newMilestone = { participantid, milestonetitle, milestonedate };
+            knex("milestone")
+                .insert(newMilestone)
+                .then(() => {
+                    res.render("visitorMilestone", {
+                        message: "Milestone recorded",
+                        error_message: "",
+                        username: req.session.username || null,
+                        level: req.session.level || null
+                    });
+                })
+                .catch((error) => {
+                    console.log("Milestone record error: ", error);
+                    res.render("visitorMilestone", {
+                        message: "",
+                        error_message: "Unable to submit",
+                        username: req.session.username || null,
+                        level: req.session.level || null
+                    });
+                })
         })
         .catch((error) => {
-            console.log("Milestone submit error: ", error);
+            console.log("Participant ID error: ", error);
             res.render("visitorMilestone", {
                 message: "",
-                error_message: "Unable to submit",
+                error_message: "Cannot find participant",
                 username: req.session.username || null,
                 level: req.session.level || null
             });
-        })
+        });
 });
 
 app.get("/visitorDonate", (req, res) => {
@@ -1111,25 +1128,42 @@ app.get("/visitorDonate", (req, res) => {
 });
 
 app.post("/visitorDonate", (req, res) => {
-    knex("donation")
-        .insert(req.body)
-        .then(() => {
-            res.render("visitorDonate", {
-                message: "Donation recorded",
-                error_message: "",
-                username: req.session.username || null,
-                level: req.session.level || null
-            });
+    const { participantemail, donationamount, donationdate } = req.body;
+    knex("participant")
+        .where("participantemail", participantemail)
+        .first()
+        .then((participant) => {
+            const participantid = participant.participantid;
+            const newDonate = { participantid, donationamount, donationdate };
+            knex("donation")
+                .insert(newDonate)
+                .then(() => {
+                    res.render("visitorDonate", {
+                        message: "Donation recorded",
+                        error_message: "",
+                        username: req.session.username || null,
+                        level: req.session.level || null
+                    });
+                })
+                .catch((error) => {
+                    console.log("Donation record error: ", error);
+                    res.render("visitorDonate", {
+                        message: "",
+                        error_message: "Unable to submit",
+                        username: req.session.username || null,
+                        level: req.session.level || null
+                    });
+                })
         })
         .catch((error) => {
-            console.log("Donation submit error: ", error);
+            console.log("Participant ID error: ", error);
             res.render("visitorDonate", {
                 message: "",
-                error_message: "Unable to submit",
+                error_message: "Cannot find participant",
                 username: req.session.username || null,
                 level: req.session.level || null
             });
-        })
+        });
 });
 
 app.get("/teapot", (req, res) => {
