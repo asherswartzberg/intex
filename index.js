@@ -1,14 +1,28 @@
+// Intex - Ella Rises
+// Group 3 - 14
+// Ella Rises Website for users and managers to track data.
+
+// Import libraries
 require('dotenv').config();
 const express = require("express");
 const session = require("express-session");
+// Security Headers
+const helmet = require('helmet');
 let path = require("path");
 let bodyParser = require("body-parser");
 let app = express();
+// Set helmet
+app.use(helmet());
+// Set view engine
 app.set("view engine", "ejs");
+// Set routes for images and styles
 app.use("/styles", express.static(path.join(__dirname, "styles")));
 app.use("/images", express.static(path.join(__dirname, "images")));
+// Use port
 const port = process.env.PORT || 3000;
 
+
+// Session secret key
 app.use(
     session(
         {
@@ -19,6 +33,7 @@ app.use(
     )
 );
 
+// Connect to the database
 const knex = require("knex")({
     client: "pg",
     connection: {
@@ -42,6 +57,7 @@ app.get('/', (req, res) => {
     });
 });
 
+// About page route
 app.get('/about', (req, res) => {
     res.render('about', {
         username: req.session.username || null,
@@ -49,6 +65,7 @@ app.get('/about', (req, res) => {
     });
 });
 
+// Dashboard route
 app.get('/dashboard', (req, res) => {
     res.render('dashboard', {
         username: req.session.username || null,
@@ -56,6 +73,7 @@ app.get('/dashboard', (req, res) => {
     });
 });
 
+// Email page route
 app.get('/email', (req, res) => {
     res.render('email', {
         username: req.session.username || null,
@@ -69,7 +87,7 @@ app.get('/login', (req, res) => {
     if (req.session.username) {
         return res.redirect('/');
     }
-    
+    // Render the login page
     res.render('login', {
         error: null,
         message: null,
@@ -135,6 +153,7 @@ app.get('/logout', (req, res) => {
             console.error('Logout error:', err);
             return res.redirect('/');
         }
+        // Redirect back to login page
         res.redirect('/login');
     });
 });
@@ -640,6 +659,7 @@ app.post('/donations/delete/:id', isAuthenticated, async (req, res) => {
     }
 });
 
+// Long function to format the titles in the edit and add forms
 app.locals.formatName = function(name) {
     return name
         .replace(/participant/, "Participant ")
@@ -1051,6 +1071,7 @@ app.post('/users/edit/:id', isAuthenticated, async (req, res) => {
     }
 });
 
+// Route for event survey once user has entered email and chosen the event
 app.get("/visitorSurvey/:pid/:eid", async (req, res) => {
     const eventDatesResult = await knex('eventoccurrence')
         .join('registration', 'eventoccurrence.eventoccurrenceid', 'registration.eventoccurrenceid')
@@ -1088,8 +1109,10 @@ app.get("/visitorSurvey/:pid/:eid", async (req, res) => {
         });
 });
 
+// Post for event survey
 app.post("/visitorSurvey", async (req, res) => {
     const { eventid, eventdatetimestart, participantid, surveysatisfactionscore, surveyusefulnessscore, surveyinstructorscore, surveyrecommendationscore, surveycomments, surveysubmissiondate } = req.body;
+    // Calculate the overallscore
     const surveyoverallscore = (
         Math.round(
             (
@@ -1100,6 +1123,7 @@ app.post("/visitorSurvey", async (req, res) => {
             ) / 4
         )
     );
+    // Determine survey bucket
     let surveynpsbucket = ""
     if (surveyrecommendationscore == 5) {
         surveynpsbucket = "Promoter";
@@ -1109,6 +1133,7 @@ app.post("/visitorSurvey", async (req, res) => {
         surveynpsbucket = "Detractor";
     }
 
+    // Get the eventoccurrenceid
     const selectedDate = eventdatetimestart.split('T')[0];
     const eventoccurrenceRow = await knex('eventoccurrence')
         .where('eventid', eventid)
@@ -1117,6 +1142,7 @@ app.post("/visitorSurvey", async (req, res) => {
 
     const eventoccurrenceid = eventoccurrenceRow.eventoccurrenceid;
 
+    // Get the registrationid
     const registrationRow = await knex('registration')
         .where('participantid', participantid)
         .where('eventoccurrenceid', eventoccurrenceid)
@@ -1124,6 +1150,7 @@ app.post("/visitorSurvey", async (req, res) => {
 
     const registrationid = registrationRow.registrationid;
 
+    // Put all info together then insert it into database
     const newSurvey = {
         registrationid, surveysatisfactionscore,
         surveyusefulnessscore, surveyinstructorscore,
@@ -1151,6 +1178,7 @@ app.post("/visitorSurvey", async (req, res) => {
         })
 });
 
+// Render the milestone form
 app.get("/visitorMilestone", (req, res) => {
     res.render("visitorMilestone", {
         message: "",
@@ -1160,6 +1188,7 @@ app.get("/visitorMilestone", (req, res) => {
     });
 });
 
+// Post for the milestone form that uses email to determine participantid
 app.post("/visitorMilestone", (req, res) => {
     const { participantemail, milestonetitle, milestonedate } = req.body;
     knex("participant")
@@ -1199,6 +1228,7 @@ app.post("/visitorMilestone", (req, res) => {
         });
 });
 
+// Render donate form
 app.get("/visitorDonate", (req, res) => {
     res.render("visitorDonate", {
         message: "",
@@ -1208,6 +1238,7 @@ app.get("/visitorDonate", (req, res) => {
     });
 });
 
+// Post donate form using email to get participant id
 app.post("/visitorDonate", (req, res) => {
     const { participantemail, donationamount, donationdate } = req.body;
     knex("participant")
@@ -1388,6 +1419,59 @@ app.get('/viewEvents', async (req, res) => {
     }
 });
 
+// ============== PARTICIPANT MILESTONES ROUTE ==============
+
+// Display milestones for a specific participant
+app.get('/participantMilestones/:participantid', isAuthenticated, async (req, res) => {
+    try {
+        const participantId = req.params.participantid;
+        const page = parseInt(req.query.page) || 1;
+        const limit = 12; // 12 milestones per page
+        const offset = (page - 1) * limit;
+
+        // Get participant information
+        const participant = await knex('participant')
+            .where({ participantid: participantId })
+            .first();
+
+        if (!participant) {
+            return res.redirect('/participants?error=Participant not found');
+        }
+
+        // Build base query for milestones
+        let baseQuery = knex('milestone')
+            .where({ participantid: participantId });
+
+        // Get total count
+        const countResult = await baseQuery.clone().count('milestoneid as count');
+        const totalRecords = countResult[0].count;
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        // Get paginated milestones
+        const milestones = await baseQuery.clone()
+            .select('*')
+            .limit(limit)
+            .offset(offset)
+            .orderBy('milestonedate', 'desc');
+
+        res.render('participantMilestones', {
+            username: req.session.username,
+            level: req.session.level,
+            participant,
+            milestones,
+            currentPage: page,
+            totalPages,
+            totalRecords,
+            message: req.query.message || null,
+            error: req.query.error || null
+        });
+    } catch (error) {
+        console.error('Participant Milestones page error:', error);
+        res.redirect('/participants?error=Error loading participant milestones');
+    }
+});
+
+// This is for the teapot requirement
 app.get("/teapot", (req, res) => {
     res.sendStatus(418);
 });

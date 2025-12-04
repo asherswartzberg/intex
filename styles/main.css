@@ -1234,6 +1234,82 @@ section {
     margin-top: 0.5rem;
 }
 
+/* Participant Info Header */
+.participant-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--light-pink);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.participant-details {
+    flex: 1;
+}
+
+.participant-id {
+    color: var(--dark-gray);
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    opacity: 0.8;
+}
+
+.add-milestone-section {
+    margin-bottom: 2rem;
+}
+
+/* Milestones Grid */
+.milestones-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.milestone-card {
+    background-color: var(--white);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 3px 10px rgba(58, 63, 59, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.milestone-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(58, 63, 59, 0.15);
+}
+
+.milestone-content {
+    flex-grow: 1;
+}
+
+.milestone-title {
+    font-size: 1.3rem;
+    color: var(--dark-gray);
+    margin: 0 0 1rem 0;
+}
+
+.milestone-date {
+    color: var(--dark-gray);
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.milestone-date strong {
+    font-weight: 600;
+}
+
+.milestone-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
 /* Pagination */
 .pagination {
     display: flex;
@@ -1414,6 +1490,14 @@ section {
 
     .event-type-badge {
         align-self: flex-start;
+    }
+
+    .milestones-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .participant-info-header {
+        flex-direction: column;
     }
 
     .stat-number {
