@@ -79,6 +79,7 @@
                         <thead>
                             <tr>
                                 <th>Participant</th>
+                                <th></th>
                                 <th>Milestone Title</th>
                                 <th>Milestone Date</th>
                                 <% if (level === 'M') { %>
@@ -90,6 +91,7 @@
                             <% milestones.forEach(milestone => { %>
                                 <tr>
                                     <td><%= milestone.participantfirstname %></td>
+                                    <td><%= milestone.participantlastname %></td>
                                     <td><%= milestone.milestonetitle %></td>
                                     <td><%= new Date(milestone.milestonedate).toLocaleDateString() %></td>
                                     <% if (level === 'M') { %>

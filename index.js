@@ -400,6 +400,8 @@ app.get('/surveys', isAuthenticated, async (req, res) => {
                 'survey.surveyid',
                 'event.eventname',
                 'participant.participantfirstname',
+                'survey.surveyusefulnessscore',
+                'survey.surveyrecommendationscore',
                 'survey.surveyoverallscore',
                 'survey.surveysubmissiondate'
             )
@@ -469,6 +471,7 @@ app.get('/milestones', isAuthenticated, async (req, res) => {
         if (search) {
             baseQuery = baseQuery.where(function() {
                 this.where('participant.participantfirstname', 'like', `%${search}%`)
+                    .orWhere('participant.participantlastname', 'like', `%${search}%`)
                     .orWhere('milestone.milestonetitle', 'like', `%${search}%`);
             });
         }
@@ -483,6 +486,7 @@ app.get('/milestones', isAuthenticated, async (req, res) => {
             .select(
                 'milestone.milestoneid',
                 'participant.participantfirstname',
+                'participant.participantlastname',
                 'milestone.milestonetitle',
                 'milestone.milestonedate'
             )
@@ -550,7 +554,11 @@ app.get('/donations', isAuthenticated, async (req, res) => {
             .join('participant', 'donation.participantid', 'participant.participantid');
         
         if (search) {
-            baseQuery = baseQuery.where('participant.participantfirstname', 'like', `%${search}%`);
+            baseQuery = baseQuery.where(function() {
+                this.where('participant.participantfirstname', 'like', `%${search}%`)
+                    .orWhere('participant.participantlastname', 'like', `%${search}%`);
+            });
+            //baseQuery = baseQuery.where('participant.participantfirstname', 'like', `%${search}%`);
         }
 
         // Get total count (separate query, no GROUP BY issue)
@@ -563,6 +571,7 @@ app.get('/donations', isAuthenticated, async (req, res) => {
             .select(
                 'donation.donationid',
                 'participant.participantfirstname',
+                'participant.participantlastname',
                 'donation.donationdate',
                 'donation.donationamount'
             )
@@ -1034,7 +1043,16 @@ app.get("/visitorSurvey", (req, res) => {
 
 app.post("/visitorSurvey", (req, res) => {
     const { registrationid, surveysatisfactionscore, surveyusefulnessscore, surveyinstructorscore, surveyrecommendationscore, surveycomments, surveysubmissiondate } = req.body;
-    const surveyoverallscore = Math.round((surveysatisfactionscore + surveyusefulnessscore + surveyinstructorscore + surveyrecommendationscore) / 4);
+    const surveyoverallscore = (
+        Math.round(
+            (
+                Number(surveysatisfactionscore) +
+                Number(surveyusefulnessscore) +
+                Number(surveyinstructorscore) +
+                Number(surveyrecommendationscore)
+            ) / 4
+        )
+    );
     let surveynpsbucket = ""
     if (surveyrecommendationscore == 5) {
         surveynpsbucket = "Promoter";

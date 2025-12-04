@@ -862,7 +862,7 @@ section {
 
 .data-table th {
     padding: 1rem;
-    text-align: left;
+    text-align: center; /* Add this line */
     font-weight: 600;
     font-size: 0.95rem;
     font-family: 'Montserrat', sans-serif;
@@ -872,6 +872,7 @@ section {
     padding: 1rem;
     border-bottom: 1px solid var(--light-pink);
     color: var(--dark-gray);
+    text-align: center; /* Add this line */
 }
 
 .data-table tbody tr:hover {

@@ -79,7 +79,9 @@
                         <thead>
                             <tr>
                                 <th>Event Name</th>
-                                <th>Participant Name</th>
+                                <th>Participant</th>
+                                <th>Usefulness</th>
+                                <th>Recommendation</th>
                                 <th>Overall Score</th>
                                 <th>Submission Date</th>
                                 <% if (level === 'M') { %>
@@ -92,6 +94,8 @@
                                 <tr>
                                     <td><%= survey.eventname %></td>
                                     <td><%= survey.participantfirstname %></td>
+                                    <td><%= survey.surveyusefulnessscore %></td>
+                                    <td><%= survey.surveyrecommendationscore %></td>
                                     <td><%= survey.surveyoverallscore %></td>
                                     <td><%= new Date(survey.surveysubmissiondate).toLocaleDateString() %></td>
                                     <% if (level === 'M') { %>
