@@ -11,30 +11,49 @@
         <div class="container">
             <div class="header-content">
                 <div class="logo">
-                    <h1>Ella Rises</h1>
+                    <a href="/"><h1>Ella Rises</h1></a>
                 </div>
                 <nav class="main-nav">
                     <ul>
-                        <% if (username) { %>
-                            <% if (level === 'M') { %>
-                                <li><a href="/users">Users</a></li>
-                            <% } %>
-                            <li><a href="/participants">Participants</a></li>
-                            <li><a href="/events">Events</a></li>
-                            <li><a href="/surveys">Surveys</a></li>
-                            <li><a href="/milestones">Milestones</a></li>
-                            <li><a href="/donations">Donations</a></li>
-                            <li><a href="/dashboard">Dashboard</a></li>
-                            <li><a href="/logout">Logout</a></li>
-                        <% } else { %>
-                            <li><a href="/dashboard">Dashboard</a></li>
-                            <li><a href="/login">Login</a></li>
-                        <% } %>
+                        <li><a href="/" class="active">Home</a></li>
+                        <li><a href="/about">About</a></li>
+                        <li><a href="/viewEvents">View Events</a></li>
+                        <li><a href="/dashboard">Dashboard</a></li>
                     </ul>
                 </nav>
+                <button class="hamburger-menu" id="hamburgerBtn" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </div>
         </div>
     </header>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <nav class="sidebar" id="sidebar">
+        <button class="sidebar-close" id="sidebarClose">&times;</button>
+        <ul class="sidebar-menu">
+            <% if (username) { %>
+                <li class="sidebar-user-info">
+                    <strong><%= username %></strong>
+                    <span><%= level === 'M' ? 'Manager' : 'User' %></span>
+                </li>
+                <% if (level === 'M') { %>
+                    <li><a href="/users">Users</a></li>
+                <% } %>
+                <li><a href="/participants">Participants</a></li>
+                <li><a href="/events">Events</a></li>
+                <li><a href="/surveys">Surveys</a></li>
+                <li><a href="/milestones">Milestones</a></li>
+                <li><a href="/donations">Donations</a></li>
+                <li><a href="/logout" class="sidebar-logout">Logout</a></li>
+            <% } else { %>
+                <li><a href="/login" class="sidebar-login">Login</a></li>
+            <% } %>
+        </ul>
+    </nav>
 
     <main>
         <% if (username) { %>
@@ -57,122 +76,53 @@
             </div>
         </section>
 
-        <section class="mission">
+        <section class="image-showcase">
             <div class="container">
-                <div class="section-header">
-                    <h3>Our Mission</h3>
-                    <div class="underline"></div>
-                </div>
-                <div class="mission-content">
-                    <div class="mission-logo">
-                        <img src="/images/EllaRisesLogo.PNG" alt="Ella Rises Logo" class="logo-image">
+                <div class="showcase-grid">
+                    <div class="showcase-item">
+                        <img src="/images/ellarisescraft.jpg" alt="Workshop participants" class="showcase-image">
                     </div>
-                    <div class="mission-text">
-                        <p class="mission-statement">
-                            Ella Rises invites young women to pursue higher education and embrace their heritage by providing culturally rooted programs and educational experiences. Through our signature programs and the Ella Rises Summit, we serve over 150 young women each year, fostering confidence, creativity, and academic excellence.
-                        </p>
+                    <div class="showcase-item">
+                        <img src="/images/ellariseshomepage.jpeg" alt="Ella Rises Community" class="showcase-image">
+                    </div>
+                    <div class="showcase-item">
+                        <img src="/images/ellarisesschool.jpg" alt="Workshop participants" class="showcase-image">
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="cta">
+        <section class="action-section enroll-section">
             <div class="container">
-                <div class="cta-content">
-                    <h3>Join Us in Making a Difference</h3>
-                    <p>Support our mission to empower young women through education and cultural enrichment.</p>
-                    <div class="cta-buttons">
-                        <a href="https://givebutter.com/EllaRises" class="btn btn-tertiary">Donate Now</a>
-                        <a href="https://docs.google.com/forms/d/1hUJeUu-q9w7ajSUU9jjgYsF8XjGPO7_ElktBYiMt-uU/viewform?edit_requested=true" class="btn btn-tertiary">Enroll a Participant</a>
+                <div class="action-content">
+                    <div class="action-text">
+                        <div class="section-header">
+                            <h3>Participate in Events</h3>
+                            <div class="underline"></div>
+                        </div>
+                        <p class="action-description">Join our vibrant community of young women! Enroll today to take part in STEAM-focused programs, cultural events, and educational workshops designed to empower you through learning and creativity.</p>
+                        <a href="https://docs.google.com/forms/d/1hUJeUu-q9w7ajSUU9jjgYsF8XjGPO7_ElktBYiMt-uU/viewform?edit_requested=true" target="_blank" class="btn btn-primary">Enroll Now</a>
+                    </div>
+                    <div class="action-image">
+                        <img src="/images/ellarisesworkshop.jpg" alt="Workshop participants" class="feature-image">
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="programs">
+        <section class="action-section donate-section">
             <div class="container">
-                <div class="section-header">
-                    <h3>Our Programs</h3>
-                    <div class="underline"></div>
-                </div>
-                <div class="programs-grid">
-                    <div class="program-card">
-                        <h4>Ballet Folklorico</h4>
-                        <p>Our art program fosters joy, confidence, and creative self-expression rooted in culture through Latin American folk dance.</p>
+                <div class="action-content reverse">
+                    <div class="action-image">
+                        <img src="/images/ellarisesmural.jpg" alt="Community mural project" class="feature-image">
                     </div>
-                    <div class="program-card">
-                        <h4>Mariachi</h4>
-                        <p>A female mariachi band program where all levels of music proficiency are welcome. We celebrate mariachi music and cultural heritage through performance.</p>
-                    </div>
-                    <div class="program-card">
-                        <h4>STEAM</h4>
-                        <p>Virtual and in-person STEAM workshops that develop inquiry, discussion, and critical thinking about science, technology, engineering, art, and math careers.</p>
-                    </div>
-                    <div class="program-card">
-                        <h4>Ella Rises Summit</h4>
-                        <p>A day camp featuring art, STEM activities, and educational pathways, concluding with a tour of local universities or technical colleges.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="objectives">
-            <div class="container">
-                <div class="section-header">
-                    <h3>Our Objectives</h3>
-                    <div class="underline"></div>
-                </div>
-                <div class="objectives-content">
-                    <div class="objective-item">
-                        <div class="objective-number">01</div>
-                        <div class="objective-text">
-                            <h5>Educational Empowerment</h5>
-                            <p>Inspire young women to pursue higher education and explore diverse academic and career pathways through mentorship and exposure to universities and technical colleges.</p>
+                    <div class="action-text">
+                        <div class="section-header">
+                            <h3>Support Our Organization</h3>
+                            <div class="underline"></div>
                         </div>
-                    </div>
-                    <div class="objective-item">
-                        <div class="objective-number">02</div>
-                        <div class="objective-text">
-                            <h5>Cultural Connection</h5>
-                            <p>Preserve and celebrate heritage through authentic cultural programs including Ballet Folklorico and Mariachi, building pride in participants' cultural identity.</p>
-                        </div>
-                    </div>
-                    <div class="objective-item">
-                        <div class="objective-number">03</div>
-                        <div class="objective-text">
-                            <h5>STEAM Excellence</h5>
-                            <p>Develop critical thinking and problem-solving skills through engaging STEAM workshops that open doors to careers in science, technology, engineering, art, and mathematics.</p>
-                        </div>
-                    </div>
-                    <div class="objective-item">
-                        <div class="objective-number">04</div>
-                        <div class="objective-text">
-                            <h5>Community Building</h5>
-                            <p>Create a supportive network where young women can build confidence, develop leadership skills, and find belonging in a community that celebrates their potential.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="impact">
-            <div class="container">
-                <div class="section-header">
-                    <h3>Our Impact</h3>
-                    <div class="underline"></div>
-                </div>
-                <div class="stats">
-                    <div class="stat-item">
-                        <div class="stat-number">150+</div>
-                        <div class="stat-label">Young Women Served Annually</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">4</div>
-                        <div class="stat-label">Signature Programs</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">100%</div>
-                        <div class="stat-label">Culturally Rooted</div>
+                        <p class="action-description">Your donations make a real difference! Help us continue empowering young women in our community through culturally rooted programs, educational opportunities, and meaningful experiences.</p>
+                        <a href="https://givebutter.com/EllaRises" target="_blank" class="btn btn-primary">Donate Now</a>
                     </div>
                 </div>
             </div>
@@ -184,7 +134,7 @@
                     <h3>We Want to Hear From You</h3>
                     <p>Have you attended an event, reached a milestone, or donated? Fill out one of the forms to let us know!</p>
                     <div class="cta-buttons">
-                        <a href="/visitorSurvey" class="btn btn-tertiary">Event Surveys</a>
+                        <a href="/email" class="btn btn-tertiary">Event Surveys</a>
                         <a href="/visitorMilestone" class="btn btn-tertiary">Milestones</a>
                         <a href="/visitorDonate" class="btn btn-tertiary">Donations</a>
                     </div>
@@ -203,12 +153,8 @@
                 <div class="footer-section">
                     <h4>Quick Links</h4>
                     <ul>
+                        <li><a href="/about">About</a></li>
                         <li><a href="/dashboard">Dashboard</a></li>
-                        <% if (username) { %>
-                            <li><a href="/logout">Logout</a></li>
-                        <% } else { %>
-                            <li><a href="/login">Login</a></li>
-                        <% } %>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -221,5 +167,34 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        // Sidebar functionality
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarClose = document.getElementById('sidebarClose');
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        hamburgerBtn.addEventListener('click', openSidebar);
+        sidebarClose.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // Close sidebar when clicking a link
+        document.querySelectorAll('.sidebar-menu a').forEach(link => {
+            link.addEventListener('click', closeSidebar);
+        });
+    </script>
 </body>
 </html>

@@ -42,8 +42,22 @@ app.get('/', (req, res) => {
     });
 });
 
+app.get('/about', (req, res) => {
+    res.render('about', {
+        username: req.session.username || null,
+        level: req.session.level || null
+    });
+});
+
 app.get('/dashboard', (req, res) => {
     res.render('dashboard', {
+        username: req.session.username || null,
+        level: req.session.level || null
+    });
+});
+
+app.get('/email', (req, res) => {
+    res.render('email', {
         username: req.session.username || null,
         level: req.session.level || null
     });
@@ -58,7 +72,9 @@ app.get('/login', (req, res) => {
     
     res.render('login', {
         error: null,
-        message: null
+        message: null,
+        username: null,
+        level: null
     });
 });
 
@@ -664,6 +680,9 @@ app.locals.formatName = function(name) {
         .replace(/date/, "Date")
         .replace(/number/, "Number")
         .replace(/amount/, "Amount")
+        .replace(/userName/, "Username")
+        .replace(/password/, "Password")
+        .replace(/level/, "Level")
         .trim();
 };
 
@@ -1032,17 +1051,45 @@ app.post('/users/edit/:id', isAuthenticated, async (req, res) => {
     }
 });
 
-app.get("/visitorSurvey", (req, res) => {
-    res.render("visitorSurvey", {
-        message: "",
-        error_message: "",
-        username: req.session.username || null,
-        level: req.session.level || null
+app.get("/visitorSurvey/:pid/:eid", async (req, res) => {
+    const eventDatesResult = await knex('eventoccurrence')
+        .join('registration', 'eventoccurrence.eventoccurrenceid', 'registration.eventoccurrenceid')
+        .where('registration.participantid', req.params.pid)
+        .where('eventoccurrence.eventid', req.params.eid)
+        .whereNotNull('eventoccurrence.eventdatetimestart')
+        .distinct('eventoccurrence.eventdatetimestart')
+        .orderBy('eventoccurrence.eventdatetimestart');
+
+    const eventDates = eventDatesResult.map(row => {
+        const dateObj = new Date(row.eventdatetimestart);
+        return {
+            value: dateObj.toISOString(), // for queries
+            display: dateObj.toLocaleDateString() // human-readable for dropdown
+        };
     });
+    
+    knex('event')
+        .where('eventid', req.params.eid)
+        .first()
+        .then((event) => {
+            res.render("visitorSurvey", {
+            message: "",
+            error_message: "",
+            username: req.session.username || null,
+            level: req.session.level || null,
+            eventDates,
+            event,
+            pid : req.params.pid
+            });
+        })
+        .catch((error) => {
+            console.log(error);
+            res.redirect("/email");
+        });
 });
 
-app.post("/visitorSurvey", (req, res) => {
-    const { registrationid, surveysatisfactionscore, surveyusefulnessscore, surveyinstructorscore, surveyrecommendationscore, surveycomments, surveysubmissiondate } = req.body;
+app.post("/visitorSurvey", async (req, res) => {
+    const { eventid, eventdatetimestart, participantid, surveysatisfactionscore, surveyusefulnessscore, surveyinstructorscore, surveyrecommendationscore, surveycomments, surveysubmissiondate } = req.body;
     const surveyoverallscore = (
         Math.round(
             (
@@ -1061,6 +1108,22 @@ app.post("/visitorSurvey", (req, res) => {
     } else {
         surveynpsbucket = "Detractor";
     }
+
+    const selectedDate = eventdatetimestart.split('T')[0];
+    const eventoccurrenceRow = await knex('eventoccurrence')
+        .where('eventid', eventid)
+        .whereRaw('DATE(eventdatetimestart) = ?', [selectedDate])
+        .first();
+
+    const eventoccurrenceid = eventoccurrenceRow.eventoccurrenceid;
+
+    const registrationRow = await knex('registration')
+        .where('participantid', participantid)
+        .where('eventoccurrenceid', eventoccurrenceid)
+        .first();
+
+    const registrationid = registrationRow.registrationid;
+
     const newSurvey = {
         registrationid, surveysatisfactionscore,
         surveyusefulnessscore, surveyinstructorscore,
@@ -1070,18 +1133,18 @@ app.post("/visitorSurvey", (req, res) => {
     knex("survey")
         .insert(newSurvey)
         .then(() => {
-            res.render("visitorSurvey", {
-                message: "Response submitted",
+            res.render("email", {
+                message: "Response submitted!",
                 error_message: "",
                 username: req.session.username || null,
-                level: req.session.level || null
+                level: req.session.level || null,
             });
         })
         .catch((error) => {
             console.log("Survey submit error: ", error);
-            res.render("visitorSurvey", {
+            res.render("Email", {
                 message: "",
-                error_message: "Unable to submit",
+                error_message: "Unable to submit survey",
                 username: req.session.username || null,
                 level: req.session.level || null
             });
@@ -1182,6 +1245,147 @@ app.post("/visitorDonate", (req, res) => {
                 level: req.session.level || null
             });
         });
+});
+
+// ============== EVENT SURVEYS ROUTES ==============
+
+// Display event surveys page
+app.post('/eventSurveys', async (req, res) => {
+    const { participantemail } = req.body;
+    const participantRow = await knex('participant')
+        .where('participantemail', participantemail)
+        .first();
+
+    if (!participantRow) {
+        res.render('email', {
+            username: req.session.username || null,
+            level: req.session.level || null,
+            error_message: "Invalid Email"
+        });
+    }
+
+    const participantid = participantRow.participantid;
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 9; // 9 events per page (3x3 grid)
+        const offset = (page - 1) * limit;
+
+        // Build base query
+        let baseQuery = knex('event')
+            .join('eventoccurrence', 'event.eventid', 'eventoccurrence.eventid')
+            .join('registration', 'eventoccurrence.eventoccurrenceid', 'registration.eventoccurrenceid')
+            .where('registration.participantid', participantid)
+            .whereNotNull('eventoccurrence.eventdatetimestart')
+            .select(
+                'event.eventid',
+                'event.eventname',
+                'event.eventtype',
+                'event.eventdescription',
+                'registration.participantid'
+            )
+            .distinctOn('event.eventid') // returns one row per eventid
+            .orderBy('event.eventid');    // required for DISTINCT ON
+
+        // Get total count
+        const countResult = await knex
+            .from(baseQuery.clone().as('sub'))
+            .count('* as count');
+
+        const totalRecords = parseInt(countResult[0].count, 10);
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        // Get paginated results
+        const events = await baseQuery.clone()
+            .select('*')
+            .limit(limit)
+            .offset(offset)
+            .orderBy('eventname');
+
+        res.render('eventSurveys', {
+            username: req.session.username || null,
+            level: req.session.level || null,
+            events,
+            currentPage: page,
+            totalPages,
+            totalRecords,
+            message: req.query.message || null,
+            error: req.query.error || null
+        });
+    } catch (error) {
+        console.error('Event Surveys page error:', error);
+        res.render('eventSurveys', {
+            username: req.session.username || null,
+            level: req.session.level || null,
+            events: [],
+            currentPage: 1,
+            totalPages: 1,
+            totalRecords: 0,
+            message: null,
+            error: 'Error loading events'
+        });
+    }
+});
+
+// Display view events page
+app.get('/viewEvents', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 9; // 9 events per page (3x3 grid)
+        const offset = (page - 1) * limit;
+        const selectedType = req.query.type || '';
+
+        // Build base query
+        let baseQuery = knex('event');
+        
+        if (selectedType) {
+            baseQuery = baseQuery.where('eventtype', selectedType);
+        }
+
+        // Get unique event types for filter dropdown
+        const eventTypesResult = await knex('event')
+            .distinct('eventtype')
+            .orderBy('eventtype');
+        const eventTypes = eventTypesResult.map(row => row.eventtype);
+
+        // Get total count
+        const countResult = await baseQuery.clone().count('event.eventid as count');
+        const totalRecords = countResult[0].count;
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        // Get paginated results
+        const events = await baseQuery.clone()
+            .select('*')
+            .limit(limit)
+            .offset(offset)
+            .orderBy('eventname');
+
+        res.render('viewEvents', {
+            username: req.session.username || null,
+            level: req.session.level || null,
+            events,
+            eventTypes,
+            selectedType,
+            currentPage: page,
+            totalPages,
+            totalRecords,
+            message: req.query.message || null,
+            error: req.query.error || null
+        });
+    } catch (error) {
+        console.error('View Events page error:', error);
+        res.render('viewEvents', {
+            username: req.session.username || null,
+            level: req.session.level || null,
+            events: [],
+            eventTypes: [],
+            selectedType: '',
+            currentPage: 1,
+            totalPages: 1,
+            totalRecords: 0,
+            message: null,
+            error: 'Error loading events'
+        });
+    }
 });
 
 app.get("/teapot", (req, res) => {

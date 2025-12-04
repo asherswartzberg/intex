@@ -15,26 +15,45 @@
                 </div>
                 <nav class="main-nav">
                     <ul>
-                        <% if (username) { %>
-                            <% if (level === 'M') { %>
-                                <li><a href="/users">Users</a></li>
-                            <% } %>
-                            <li><a href="/participants">Participants</a></li>
-                            <li><a href="/events">Events</a></li>
-                            <li><a href="/surveys">Surveys</a></li>
-                            <li><a href="/milestones">Milestones</a></li>
-                            <li><a href="/donations" class="active">Donations</a></li>
-                            <li><a href="/dashboard">Dashboard</a></li>
-                            <li><a href="/logout">Logout</a></li>
-                        <% } else { %>
-                            <li><a href="/dashboard">Dashboard</a></li>
-                            <li><a href="/login">Login</a></li>
-                        <% } %>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/about">About</a></li>
+                        <li><a href="/viewEvents">View Events</a></li>
+                        <li><a href="/dashboard">Dashboard</a></li>
                     </ul>
                 </nav>
+                <button class="hamburger-menu" id="hamburgerBtn" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </div>
         </div>
     </header>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <nav class="sidebar" id="sidebar">
+        <button class="sidebar-close" id="sidebarClose">&times;</button>
+        <ul class="sidebar-menu">
+            <% if (username) { %>
+                <li class="sidebar-user-info">
+                    <strong><%= username %></strong>
+                    <span><%= level === 'M' ? 'Manager' : 'User' %></span>
+                </li>
+                <% if (level === 'M') { %>
+                    <li><a href="/users">Users</a></li>
+                <% } %>
+                <li><a href="/participants">Participants</a></li>
+                <li><a href="/events">Events</a></li>
+                <li><a href="/surveys">Surveys</a></li>
+                <li><a href="/milestones">Milestones</a></li>
+                <li><a href="/donations">Donations</a></li>
+                <li><a href="/logout" class="sidebar-logout">Logout</a></li>
+            <% } else { %>
+                <li><a href="/login" class="sidebar-login">Login</a></li>
+            <% } %>
+        </ul>
+    </nav>
 
     <% if (username) { %>
         <section class="welcome-banner">
@@ -50,7 +69,7 @@
     <main class="page-container">
         <div class="container">
             <div class="page-header">
-                <h2 class="page-title">Participant Donations    <a href="/donations" style="text-decoration: none; color: #3A3F3B;">🗘</a></h2>
+                <h2 class="page-title">Participant Donations    <a href="/donations" class="btn btn-primary btn-small">Refresh</a></h2>
                 <% if (level === 'M') { %>
                     <a href="/donation/add" class="btn btn-primary">Add New Donation</a>
                 <% } %>
@@ -151,6 +170,33 @@
                 window.location.href = `/donations?search=${encodeURIComponent(searchValue)}`;
             }
         }
+
+        // Sidebar functionality
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarClose = document.getElementById('sidebarClose');
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        hamburgerBtn.addEventListener('click', openSidebar);
+        sidebarClose.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // Close sidebar when clicking a link
+        document.querySelectorAll('.sidebar-menu a').forEach(link => {
+            link.addEventListener('click', closeSidebar);
+        });
     </script>
 </body>
 </html>

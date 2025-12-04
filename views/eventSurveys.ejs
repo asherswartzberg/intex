@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Ella Rises</title>
+    <title>Event Surveys | Ella Rises</title>
     <link rel="stylesheet" href="/styles/main.css">
 </head>
 <body>
@@ -55,83 +55,72 @@
         </ul>
     </nav>
 
-    <main class="login-main">
-        <div class="login-container">
-            <div class="login-box">
-                <div class="login-header">
-                    <h2>Welcome Back</h2>
-                    <p>Sign in to access your Ella Rises employee account</p>
-                </div>
+    <% if (username) { %>
+        <section class="welcome-banner">
+            <div class="container">
+                <p class="welcome-message">
+                    Welcome back, <strong><%= username %></strong>! 
+                    <span class="user-role">(<%= level === 'M' ? 'Manager' : 'User' %>)</span>
+                </p>
+            </div>
+        </section>
+    <% } %>
 
-                <% if (typeof error !== 'undefined' && error) { %>
-                    <div class="alert alert-error">
-                        <%= error %>
-                    </div>
-                <% } %>
-
-                <% if (typeof message !== 'undefined' && message) { %>
-                    <div class="alert alert-success">
-                        <%= message %>
-                    </div>
-                <% } %>
-
-                <form action="/login" method="POST" class="login-form">
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input 
-                            type="text" 
-                            id="username" 
-                            name="username" 
-                            placeholder="Enter your username"
-                            required
-                            autocomplete="username"
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            placeholder="Enter your password"
-                            required
-                            autocomplete="current-password"
-                        >
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-block">Sign In</button>
-                </form>
-
-                <div class="login-footer">
-                    <p>Don't have an account? Contact a manager to set one up.</p>
-                </div>
+    <main class="page-container">
+        <div class="container">
+            <div class="page-header">
+                <h2 class="page-title">Choose Event</h2>
             </div>
 
-            <div class="login-info">
-                <div class="info-content">
-                    <h3>Ella Rises Portal</h3>
-                    <p>Access your account to view data and support our mission.</p>
-                    <div class="info-features">
-                        <div class="feature-item">
-                            <span class="feature-icon">✓</span>
-                            <span>Manage participant enrollments</span>
+            <% if (typeof message !== 'undefined' && message) { %>
+                <div class="alert alert-success"><%= message %></div>
+            <% } %>
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-error"><%= error %></div>
+            <% } %>
+
+            <div class="events-grid">
+                <% if (events.length > 0) { %>
+                    <% events.forEach(event => { %>
+                        <div class="event-card">
+                            <div class="event-header">
+                                <h3 class="event-name"><%= event.eventname %></h3>
+                                <span class="event-type-badge"><%= event.eventtype %></span>
+                            </div>
+                            <p class="event-description"><%= event.eventdescription %></p>
+                            <!--<button class="btn btn-primary btn-small survey-btn" data-event-name="event.eventname">
+                                Take Survey
+                            </button>-->
+                            <a href="/visitorSurvey/<%= event.participantid %>/<%= event.eventid %>" class="btn btn-primary btn-small survey-btn">Take Survey</a>
                         </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">✓</span>
-                            <span>Track program events and activities</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">✓</span>
-                            <span>Review post-event surveys</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">✓</span>
-                            <span>Monitor participant milestones</span>
-                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="no-data">No events found</div>
+                <% } %>
+            </div>
+
+            <% if (totalPages > 1) { %>
+                <div class="pagination">
+                    <div class="pagination-info">
+                        Page <%= currentPage %> of <%= totalPages %> (Total: <%= totalRecords %> events)
+                    </div>
+                    <div class="pagination-buttons">
+                        <% if (currentPage > 1) { %>
+                            <a href="?page=1&type=<%= selectedType || '' %>" class="pagination-btn">First</a>
+                            <a href="?page=<%= currentPage - 1 %>&type=<%= selectedType || '' %>" class="pagination-btn">Previous</a>
+                        <% } %>
+                        
+                        <% for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) { %>
+                            <a href="?page=<%= i %>&type=<%= selectedType || '' %>" class="pagination-btn <%= i === currentPage ? 'active' : '' %>"><%= i %></a>
+                        <% } %>
+                        
+                        <% if (currentPage < totalPages) { %>
+                            <a href="?page=<%= currentPage + 1 %>&type=<%= selectedType || '' %>" class="pagination-btn">Next</a>
+                            <a href="?page=<%= totalPages %>&type=<%= selectedType || '' %>" class="pagination-btn">Last</a>
+                        <% } %>
                     </div>
                 </div>
-            </div>
+            <% } %>
         </div>
     </main>
 

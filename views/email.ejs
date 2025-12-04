@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Ella Rises</title>
+    <title>Email | Ella Rises</title>
     <link rel="stylesheet" href="/styles/main.css">
 </head>
 <body>
     <header class="main-header">
+        <header class="main-header">
         <div class="container">
             <div class="header-content">
                 <div class="logo">
@@ -55,82 +56,31 @@
         </ul>
     </nav>
 
-    <main class="login-main">
-        <div class="login-container">
-            <div class="login-box">
-                <div class="login-header">
-                    <h2>Welcome Back</h2>
-                    <p>Sign in to access your Ella Rises employee account</p>
+    <main class="page-container">
+        <div class="container">
+            
+            <% if (typeof message !== 'undefined' && message) { %>
+                <div class="alert alert-success"><%= message %></div>
+            <% } %>
+            <% if (typeof error_message !== 'undefined' && error_message) { %>
+                <div class="alert alert-error"><%= error_message %></div>
+            <% } %>
+
+            <div class="form-container">
+                <div class="form-page-header">
+                    <h2 class="page-title">Participant Email</h2>
                 </div>
-
-                <% if (typeof error !== 'undefined' && error) { %>
-                    <div class="alert alert-error">
-                        <%= error %>
-                    </div>
-                <% } %>
-
-                <% if (typeof message !== 'undefined' && message) { %>
-                    <div class="alert alert-success">
-                        <%= message %>
-                    </div>
-                <% } %>
-
-                <form action="/login" method="POST" class="login-form">
+                <form id="myForm" action="/eventSurveys" method="post">
                     <div class="form-group">
-                        <label for="username">Username</label>
-                        <input 
-                            type="text" 
-                            id="username" 
-                            name="username" 
-                            placeholder="Enter your username"
-                            required
-                            autocomplete="username"
-                        >
+                        <label for="participantemail">Enter your email to choose the event</label>
+                        <input type="text" name="participantemail" id="participantemail" placeholder="Enter Participant Email" required>
                     </div>
 
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            placeholder="Enter your password"
-                            required
-                            autocomplete="current-password"
-                        >
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <a href="/" class="btn btn-secondary">Cancel</a>
                     </div>
-
-                    <button type="submit" class="btn btn-primary btn-block">Sign In</button>
                 </form>
-
-                <div class="login-footer">
-                    <p>Don't have an account? Contact a manager to set one up.</p>
-                </div>
-            </div>
-
-            <div class="login-info">
-                <div class="info-content">
-                    <h3>Ella Rises Portal</h3>
-                    <p>Access your account to view data and support our mission.</p>
-                    <div class="info-features">
-                        <div class="feature-item">
-                            <span class="feature-icon">✓</span>
-                            <span>Manage participant enrollments</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">✓</span>
-                            <span>Track program events and activities</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">✓</span>
-                            <span>Review post-event surveys</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">✓</span>
-                            <span>Monitor participant milestones</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </main>
@@ -142,8 +92,12 @@
             </div>
         </div>
     </footer>
-
     <script>
+        document.getElementById("myForm").addEventListener("submit", () => {
+            document.getElementById("surveysubmissiondate").value =
+                new Date().toISOString();
+        });
+
         // Sidebar functionality
         const hamburgerBtn = document.getElementById('hamburgerBtn');
         const sidebar = document.getElementById('sidebar');
