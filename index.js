@@ -102,7 +102,9 @@ app.post('/login', async (req, res) => {
         if (!username || !password) {
             return res.render('login', {
                 error: 'Please provide both username and password',
-                message: null
+                message: null,
+                username: null,
+                level: null
             });
         }
         
@@ -115,7 +117,9 @@ app.post('/login', async (req, res) => {
         if (!user) {
             return res.render('login', {
                 error: 'Invalid username or password',
-                message: null
+                message: null,
+                username: null,
+                level: null
             });
         }
         
@@ -123,7 +127,9 @@ app.post('/login', async (req, res) => {
         if (user.password !== password) {
             return res.render('login', {
                 error: 'Invalid username or password',
-                message: null
+                message: null,
+                username: null,
+                level: null
             });
         }
         
@@ -138,7 +144,9 @@ app.post('/login', async (req, res) => {
         console.error('Login error:', error);
         res.render('login', {
             error: 'An error occurred during login. Please try again.',
-            message: null
+            message: null,
+            username: null,
+            level: null
         });
     }
 });
