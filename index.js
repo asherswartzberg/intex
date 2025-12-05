@@ -6,13 +6,10 @@
 require('dotenv').config();
 const express = require("express");
 const session = require("express-session");
-// Security Headers
-const helmet = require('helmet');
 let path = require("path");
 let bodyParser = require("body-parser");
 let app = express();
-// Set helmet
-app.use(helmet());
+
 // Set view engine
 app.set("view engine", "ejs");
 // Set routes for images and styles
